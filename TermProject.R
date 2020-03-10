@@ -1,16 +1,19 @@
 ratingProbsFit <- function(dataIn,maxRating,predMethod,embedMeans,specialArgs){
-	# Check for errors where using or not using embeded means with an incompatible method.
+	# Check for errors where using or not using embeded means with an incompatible method. Will return NaN if incompatable.
 	if( embedMeans and predMethod == "NMF" ) return NaN
-	if( !embedMeans and predMethod == "CART") return NaN
-
+	if( !embedMeans and predMethod == "CART" ) return NaN
+	
 	# If using embeded means replace the data with embeded data.
 	if( embedMeans ) dataIn <- embedDataMeans(dataIn)
-
+	
+	
+	dataIn[,3] <- ratingToResponse(dataIn[,3], maxRatings)
+	
 	# Call the proper predition method.
-	if( predMethod == "logit" ) return Logit(dataIn,maxRating,embedMeans,specialArgs)
+	if( predMethod == "logit" ) return Logit(dataIn,maxRating,specialArgs)
 	if( predMethod == "NMF" ) return NMF(dataIn,maxRating,specialArgs)
 	if( predMethod == "kNN" ) return KNN(dataIn,maxRating,embedMeans,specialArgs)
-	if( predMethod == "CART" ) return CART(dataIn,maxRating,embedMeans,specialArgs)
+	if( predMethod == "CART" ) return CART(dataIn,maxRating,specialArgs)
 }
 
 predict <- function(probsFitOut,newXs) {
