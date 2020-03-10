@@ -11,7 +11,7 @@ ratingProbsFit <- function(dataIn,maxRating,predMethod,embedMeans,specialArgs){
   if( embedMeans ) dataIn <- embedDataMeans(dataIn)
   
   
-  dataIn[,3] <- ratingToDummy(dataIn[,3], maxRatings)
+  dataIn <- ratingToDummy(dataIn, maxRatings)
   
   # Call the proper predition method.
   if( predMethod == "logit" ) return Logit(dataIn,maxRating,specialArgs)
@@ -38,7 +38,19 @@ Logit <- function(dataIn,maxRating,embedMeans,specialArgs) {
 
 NMF <- function(dataIn,maxRating,specialArgs) {
   # does not need embedMeans
+  rank <- specialArgs$rank
   
+  models <- vector('list', maxRating)
+  
+  for( i in 1:maxRating ) {
+  	reco <- Reco()
+  	training <- data_memory(dataIn[,1], dataIn[,2], dataIn[,3], index1 = TRUE)
+  	reco$train(training, out_model = "train.txt", opt = list(dim = rank, nmf=TRUE))	
+  	
+  	model[[i]] <- reco$output(out_P = out_memory(), out_Q =  out_memory())
+  }
+  
+  return(models)
 }
 
 KNN <-- function(dataIn,maxRating,embedMeans,specialArgs) {
