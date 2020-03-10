@@ -6,13 +6,13 @@ ratingProbsFit <- function(dataIn,maxRating,predMethod,embedMeans,specialArgs){
   # Check for errors where using or not using embeded means with an incompatible method. Will return NaN if incompatable.
   if( embedMeans and predMethod == "NMF" ) return NaN
   if( !embedMeans and predMethod == "CART" ) return NaN
-  
+
   # If using embeded means replace the data with embeded data.
   if( embedMeans ) dataIn <- embedDataMeans(dataIn)
-  
-  
+
+
   dataIn[,3] <- ratingToDummy(dataIn[,3], maxRatings)
-  
+
   # Call the proper predition method.
   if( predMethod == "logit" ) return Logit(dataIn,maxRating,specialArgs)
   if( predMethod == "NMF" ) return NMF(dataIn,maxRating,specialArgs)
@@ -21,14 +21,33 @@ ratingProbsFit <- function(dataIn,maxRating,predMethod,embedMeans,specialArgs){
 }
 
 predict <- function(probsFitOut,newXs) {
-  
+
 }
 
 embedDataMeans <- function(dataIn) {
   # http://heather.cs.ucdavis.edu/~matloff/189G/Exams/W20Quiz5Answers.txt
   library(rectools)
+  library(lme4)
+
+  # mean ratings for a user
   ud <- formUserData(dataIn)
-  ### Complete ###
+  mean_users <- sapply(ud, function(oneusr) mean(oneusr$ratings))
+
+  # mean ratings for an item
+  # switch userid and itemid so that
+  # ud1 <- formUserData(dataIn[,c(2, 1, 3)])
+  ud1 <- formUserData(dataIn[,c('itemID', 'userID', 'rating')])
+  mean_items <- sapply(ud1, function(oneitm) mean(oneitm$ratings))
+
+  # create new columns that holds the user_mean and item_mean
+  # assuming that the user named the column headings as userID and itemID
+  dataIn$user_mean <- mean_users[dataIn$userID]
+  dataIn$item_mean <- mean_items[dataIn$itemID]
+
+  # return a data frame that maps userid with user mean and
+  # itemid with item mean
+  mappings <- as.data.frame(dataIn[, c('itemID', 'user_mean', 'userID', 'item_mean')])
+  return(mappings)
 }
 
 Logit <- function(dataIn,maxRating,embedMeans,specialArgs) {
@@ -38,7 +57,7 @@ Logit <- function(dataIn,maxRating,embedMeans,specialArgs) {
 
 NMF <- function(dataIn,maxRating,specialArgs) {
   # does not need embedMeans
-  
+
 }
 
 KNN <-- function(dataIn,maxRating,embedMeans,specialArgs) {
@@ -46,7 +65,7 @@ KNN <-- function(dataIn,maxRating,embedMeans,specialArgs) {
   # get costDistance
   # should be on page 80-ish of book
   # open-ended: defining how 2 users are similar
-  
+
 }
 
 CART <- function(dataIn,maxRating,embedMeans,specialArgs) {
@@ -54,24 +73,24 @@ CART <- function(dataIn,maxRating,embedMeans,specialArgs) {
 }
 
 ratingToDummy <- function(data, maxRatings) {
-  
+
   # Extract the ratings column from the data and trim it
   numCols <- ncol(data)
   ratings <- data[,numCols]
-  data <- data[,-c(numCols)] 
-  
+  data <- data[,-c(numCols)]
+
   # Add the new columns to the matrix
-  
+
   for(i in 0:maxRatings) {
     # Create the name for the dummy variable column in format "r + rating number"
     name <- paste("r",toString(i), sep = "")
-    
-    # Each value in the new column represents a boolean that is true if the user gave an item the rating "i" 
+
+    # Each value in the new column represents a boolean that is true if the user gave an item the rating "i"
     data[,numCols + i] <- as.integer(ratings == i)
-    
+
     # Add the name to the newly created column
-    names(data)[numCols + i] <- name  
+    names(data)[numCols + i] <- name
   }
-  
-  return(data)  
+
+  return(data)
 }
