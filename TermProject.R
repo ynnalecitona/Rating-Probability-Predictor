@@ -1,5 +1,5 @@
 library(recosystem)
-library(regtools)
+library(rectools)
 library(partykit)
 
 ratingProbsFit <- function(dataIn,maxRating,predMethod,embedMeans,specialArgs){
@@ -25,10 +25,6 @@ predict <- function(probsFitOut,newXs) {
 }
 
 embedDataMeans <- function(dataIn) {
-  # http://heather.cs.ucdavis.edu/~matloff/189G/Exams/W20Quiz5Answers.txt
-  library(rectools)
-  library(lme4)
-
   # mean ratings for a user
   ud <- formUserData(dataIn)
   mean_users <- sapply(ud, function(oneusr) mean(oneusr$ratings))
