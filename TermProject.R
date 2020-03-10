@@ -11,7 +11,7 @@ ratingProbsFit <- function(dataIn,maxRating,predMethod,embedMeans,specialArgs){
   if( embedMeans ) dataIn <- embedDataMeans(dataIn)
   
   
-  dataIn[,3] <- ratingToResponse(dataIn[,3], maxRatings)
+  dataIn[,3] <- ratingToDummy(dataIn[,3], maxRatings)
   
   # Call the proper predition method.
   if( predMethod == "logit" ) return Logit(dataIn,maxRating,specialArgs)
@@ -53,7 +53,7 @@ CART <- function(dataIn,maxRating,embedMeans,specialArgs) {
   # has to use embedMeans
 }
 
-ratingtoDummy <- function(data, maxRatings) {
+ratingToDummy <- function(data, maxRatings) {
   
   # Extract the ratings column from the data and trim it
   numCols <- ncol(data)
