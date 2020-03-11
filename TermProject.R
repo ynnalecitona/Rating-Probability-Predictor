@@ -4,8 +4,12 @@ library(partykit)
 
 ratingProbsFit <- function(dataIn,maxRating,predMethod,embedMeans,specialArgs){
   # Check for errors where using or not using embeded means with an incompatible method. Will return NaN if incompatable.
-  if( embedMeans and predMethod == "NMF" ) return NaN
-  if( !embedMeans and predMethod == "CART" ) return NaN
+  if( embedMeans and predMethod == "NMF" ) {
+    stop("Do not need to embed means for NMF.\n")
+  }
+  if( !embedMeans and predMethod == "CART" ) {
+    stop("Mandatory for CART to embed means.\n")
+  }
 
   # If using embeded means replace the data with embeded data.
   if( embedMeans ) dataIn <- embedDataMeans(dataIn)
