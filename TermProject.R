@@ -35,7 +35,6 @@ embedDataMeans <- function(dataIn) {
 
   # mean ratings for an item
   # switch userid and itemid so that
-  # ud1 <- formUserData(dataIn[,c(2, 1, 3)])
   ud1 <- formUserData(dataIn[,c('itemID', 'userID', 'rating')])
   mean_items <- sapply(ud1, function(oneitm) mean(oneitm$ratings))
 
@@ -46,7 +45,7 @@ embedDataMeans <- function(dataIn) {
 
   # return a data frame that maps userid with user mean and
   # itemid with item mean
-  mappings <- as.data.frame(dataIn[, c('itemID', 'user_mean', 'userID', 'item_mean')])
+  mappings <- as.data.frame(dataIn[, c('userID', 'user_mean', 'itemID', 'item_mean')])
   return(mappings)
 }
 
