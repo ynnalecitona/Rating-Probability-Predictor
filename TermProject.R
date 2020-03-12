@@ -117,8 +117,8 @@ embedDataMeans <- function(dataIn) {
 
   # mean ratings for an item
   # switch userid and itemid so that
-  ud1 <- formUserData(dataIn[,c('itemID', 'userID', 'rating')])
-  mean_items <- sapply(ud1, function(oneitm) mean(oneitm$ratings))
+  udReversed <- formUserData(dataIn[,c('itemID', 'userID', 'rating')])
+  mean_items <- sapply(udReversed, function(oneitm) mean(oneitm$ratings))
 
   # create new columns that holds the user_mean and item_mean
   # assuming that the user named the column headings as userID and itemID
