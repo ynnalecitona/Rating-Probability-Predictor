@@ -107,15 +107,23 @@ embedDataMeans <- function(dataIn) {
   return(mappings)
 }
 
-dataToTable <- function(dataIn) {
+dataToMatrix <- function(dataIn) {
   # turns data frame into data.table which is more enhanced than data.frame
   dt <- as.data.table(dataIn)
 
-  # creates the matrix entries, and fill empty ones with NAs
+  # creates the table entries, and fill empty ones with NAs
   userID <- names(dataIn)[1]
   itemID <- names(dataIn)[2]
   valueName <- names(dataIn)[3]
   formula <- paste(c(userID, itemID), collapse = '~')
-  mat <- dcast(dt, formula, fill = NA, value.var=valueName)
+  table <- dcast(dt, formula, fill = NA, value.var=valueName)
+
+  # The first column of table will be the userID, which we don't need in our matrix
+  mat <- as.matrix(table[,-1])
+
+  # Assign the row names of the new matrix with our userIDs
+  rNames <- as.list(table[,1])
+  rNames <- rNames[[names(rNames)]]
+  row.names(mat) <- rNames
   return(mat)
 }
