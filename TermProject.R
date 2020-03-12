@@ -107,19 +107,12 @@ embedDataMeans <- function(dataIn) {
   return(mappings)
 }
 
-dataToMatrix <- function(dataIn) {
+dataToTable <- function(dataIn) {
   # turns data frame into data.table which is more enhanced than data.frame
   dt <- as.data.table(dataIn)
 
   # creates the matrix entries, and fill empty ones with NAs
   mat <- dcast(dt, userID~itemID, fill = NA)[-1]
-
-  # converts ratings automatically to strings
-  # need to figure out how to change this
-  mat <- as.matrix(mat)
-
-  # issue: everything gets converted to numeric
-  class(mat) <- as.numeric(mat)
 
   return(mat)
 }
