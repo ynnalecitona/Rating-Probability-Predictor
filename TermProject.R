@@ -1,6 +1,7 @@
 library(recosystem)
 library(rectools)
 library(partykit)
+library(data.table)
 
 ratingProbsFit <- function(dataIn,maxRating,predMethod,embedMeans,specialArgs){
   # Check for errors where using or not using embeded means with an incompatible method. Will return NaN if incompatable.
@@ -26,6 +27,53 @@ ratingProbsFit <- function(dataIn,maxRating,predMethod,embedMeans,specialArgs){
 
 predict <- function(probsFitOut,newXs) {
 
+}
+
+
+Logit <- function(dataIn,maxRating,embedMeans,specialArgs) {
+  # no changes with embedMeans for logit, despite data type changes
+  # prediction probabilities approach: pg. 36 of book, 3.3.6.3
+}
+
+NMF <- function(dataIn,maxRating,specialArgs) {
+  # does not need embedMeans
+
+}
+
+KNN <-- function(dataIn,maxRating,embedMeans,specialArgs) {
+  # embedMeans: look at entire database, find all the users who've rated this item
+  # get costDistance
+  # should be on page 80-ish of book
+  # open-ended: defining how 2 users are similar
+
+}
+
+CART <- function(dataIn,maxRating,embedMeans,specialArgs) {
+  # has to use embedMeans
+}
+
+#### HELPER FUNCTIONS ####
+ratingToDummy <- function(data, maxRatings) {
+
+  # Extract the ratings column from the data and trim it
+  numCols <- ncol(data)
+  ratings <- data[,numCols]
+  data <- data[,-c(numCols)]
+
+  # Add the new columns to the matrix
+
+  for(i in 0:maxRatings) {
+    # Create the name for the dummy variable column in format "r + rating number"
+    name <- paste("r",toString(i), sep = "")
+
+    # Each value in the new column represents a boolean that is true if the user gave an item the rating "i"
+    data[,numCols + i] <- as.integer(ratings == i)
+
+    # Add the name to the newly created column
+    names(data)[numCols + i] <- name
+  }
+
+  return(data)
 }
 
 embedDataMeans <- function(dataIn) {
@@ -59,47 +107,16 @@ embedDataMeans <- function(dataIn) {
   return(mappings)
 }
 
-Logit <- function(dataIn,maxRating,embedMeans,specialArgs) {
-  # no changes with embedMeans for logit, despite data type changes
-  # prediction probabilities approach: pg. 36 of book, 3.3.6.3
-}
+dataToMatrix <- function(dataIn) {
+  # turns data frame into data.table which is more enhanced than data.frame
+  dt <- as.data.table(dataIn)
 
-NMF <- function(dataIn,maxRating,specialArgs) {
-  # does not need embedMeans
+  # creates the matrix entries, and fill empty ones with NAs
+  mat <- dcast(dt, userID~itemID, fill = NA)[-1]
 
-}
+  # converts ratings automatically to strings
+  # need to figure out how to change this
+  mat <- as.matrix(mat)
 
-KNN <-- function(dataIn,maxRating,embedMeans,specialArgs) {
-  # embedMeans: look at entire database, find all the users who've rated this item
-  # get costDistance
-  # should be on page 80-ish of book
-  # open-ended: defining how 2 users are similar
-
-}
-
-CART <- function(dataIn,maxRating,embedMeans,specialArgs) {
-  # has to use embedMeans
-}
-
-ratingToDummy <- function(data, maxRatings) {
-
-  # Extract the ratings column from the data and trim it
-  numCols <- ncol(data)
-  ratings <- data[,numCols]
-  data <- data[,-c(numCols)]
-
-  # Add the new columns to the matrix
-
-  for(i in 0:maxRatings) {
-    # Create the name for the dummy variable column in format "r + rating number"
-    name <- paste("r",toString(i), sep = "")
-
-    # Each value in the new column represents a boolean that is true if the user gave an item the rating "i"
-    data[,numCols + i] <- as.integer(ratings == i)
-
-    # Add the name to the newly created column
-    names(data)[numCols + i] <- name
-  }
-
-  return(data)
+  return(mat)
 }
