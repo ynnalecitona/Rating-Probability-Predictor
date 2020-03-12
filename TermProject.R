@@ -19,10 +19,10 @@ ratingProbsFit <- function(dataIn,maxRating,predMethod,embedMeans,specialArgs){
   dataIn[,3] <- ratingToDummy(dataIn[,3], maxRatings)
   
   # Call the proper predition method.
-  if( predMethod == "logit" ) return Logit(dataIn,maxRating,specialArgs)
-  if( predMethod == "NMF" ) return NMF(dataIn,maxRating,specialArgs)
-  if( predMethod == "kNN" ) return KNN(dataIn,maxRating,embedMeans,specialArgs)
-  if( predMethod == "CART" ) return CART(dataIn,maxRating,specialArgs)
+  if( predMethod == "logit" ) return(Logit(dataIn,maxRating,embedMeans,specialArgs))
+  if( predMethod == "NMF" ) return(NMFTrain(dataIn,maxRating,specialArgs))
+  if( predMethod == "kNN" ) return(KNN(dataIn,maxRating,embedMeans,specialArgs))
+  if( predMethod == "CART" ) return(CART(dataIn,maxRating,specialArgs))
 }
 
 predict <- function(probsFitOut,newXs) {
