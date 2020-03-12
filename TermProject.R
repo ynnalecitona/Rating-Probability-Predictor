@@ -43,6 +43,16 @@ embedDataMeans <- function(dataIn) {
   dataIn$user_mean <- mean_users[dataIn$userID]
   dataIn$item_mean <- mean_items[dataIn$itemID]
 
+  # To remove duplicated data
+  # mappings_users <- dataIn[, c('userID', 'user_mean')]
+  # mappings_users <- unique(mappings_users)
+
+  # mappings_items <- dataIn[, c('itemID', 'item_mean')]
+  # mappings_items <- unique(mappings_items)
+  # mappings_items <- mappings_items[order(mappings_items$itemID),]
+
+  # Can't merge the two, columns don't match
+
   # return a data frame that maps userid with user mean and
   # itemid with item mean
   mappings <- as.data.frame(dataIn[, c('userID', 'user_mean', 'itemID', 'item_mean')])
