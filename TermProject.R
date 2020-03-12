@@ -5,10 +5,10 @@ library(data.table)
 
 ratingProbsFit <- function(dataIn,maxRating,predMethod,embedMeans,specialArgs){
   # Check for errors where using or not using embeded means with an incompatible method. Will return NaN if incompatable.
-  if( embedMeans and predMethod == "NMF" ) {
+  if( embedMeans && predMethod == "NMF" ) {
     stop("Do not need to embed means for NMF.\n")
   }
-  if( !embedMeans and predMethod == "CART" ) {
+  if( !embedMeans && predMethod == "CART" ) {
     stop("Mandatory for CART to embed means.\n")
   }
 
@@ -112,14 +112,10 @@ dataToMatrix <- function(dataIn) {
   dt <- as.data.table(dataIn)
 
   # creates the matrix entries, and fill empty ones with NAs
-  mat <- dcast(dt, userID~itemID, fill = NA)[-1]
-
-  # converts ratings automatically to strings
-  # need to figure out how to change this
-  mat <- as.matrix(mat)
-
-  # issue: everything gets converted to numeric
-  class(mat) <- as.numeric(mat)
-
+  userID <- names(dataIn)[1]
+  itemID <- names(dataIn)[2]
+  valueName <- names(dataIn)[3]
+  formula <- paste(c(userID, itemID), sep = '~')
+  mat <- dcast(dt, formula, fill = NA, value.var=valueName)
   return(mat)
 }
