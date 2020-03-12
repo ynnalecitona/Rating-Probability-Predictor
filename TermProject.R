@@ -62,9 +62,9 @@ NMFPredict <- function(probsFitOut,newData) {
 	
 	preds <- matrix(nrow = nNewData, ncol = nModels)
 	# For each new datum that we are given
-	for i in 1:nNewData {
+	for(i in 1:nNewData) {
 		# For each model of a different rating
-		for j in 1:nModels {
+		for(j in 1:nModels) {
 			newDatum <- newData[j]
 			preds[i,j] <- models[[i]][newDatum[1],newDatum[2]]
 		}
