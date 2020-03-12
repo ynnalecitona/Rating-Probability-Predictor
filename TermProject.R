@@ -74,7 +74,7 @@ NMFPredict <- function(probsFitOut,newData) {
 	return(preds)
 }
 
-KNN <-- function(dataIn,maxRating,embedMeans,specialArgs) {
+KNN <- function(dataIn,maxRating,embedMeans,specialArgs) {
   # embedMeans: look at entire database, find all the users who've rated this item
   # get costDistance
   # should be on page 80-ish of book
