@@ -15,14 +15,14 @@ ratingProbsFit <- function(dataIn,maxRating,predMethod,embedMeans,specialArgs){
   # If using embeded means replace the data with embeded data.
   if( embedMeans ) dataIn <- embedDataMeans(dataIn)
 
-
+  # Convert the last col ( which should be a rating integer > 0 and < maxRating ) into a dummy variable with maxRating columns
   dataIn[,3] <- ratingToDummy(dataIn[,3], maxRatings)
-
+  
   # Call the proper predition method.
-  if( predMethod == "logit" ) return Logit(dataIn,maxRating,specialArgs)
-  if( predMethod == "NMF" ) return NMF(dataIn,maxRating,specialArgs)
-  if( predMethod == "kNN" ) return KNN(dataIn,maxRating,embedMeans,specialArgs)
-  if( predMethod == "CART" ) return CART(dataIn,maxRating,specialArgs)
+  if( predMethod == "logit" ) return(Logit(dataIn,maxRating,embedMeans,specialArgs))
+  if( predMethod == "NMF" ) return(NMFTrain(dataIn,maxRating,specialArgs))
+  if( predMethod == "kNN" ) return(KNN(dataIn,maxRating,embedMeans,specialArgs))
+  if( predMethod == "CART" ) return(CART(dataIn,maxRating,specialArgs))
 }
 
 predict <- function(probsFitOut,newXs) {
@@ -35,12 +35,46 @@ Logit <- function(dataIn,maxRating,embedMeans,specialArgs) {
   # prediction probabilities approach: pg. 36 of book, 3.3.6.3
 }
 
-NMF <- function(dataIn,maxRating,specialArgs) {
+NMFTrain <- function(dataIn,maxRating,specialArgs) {
   # does not need embedMeans
-
+  rank <- specialArgs$rank
+  
+  models <- vector('list', maxRating)
+  
+  for( i in 1:maxRating ) {
+  	reco <- Reco()
+  	training <- data_memory(dataIn[,1], dataIn[,2], dataIn[,3], index1 = TRUE)
+  	reco$train(training, out_model = "train.txt", opt = list(dim = rank, nmf=TRUE))	
+  	
+  	result <- reco$output(out_P = out_memory(), out_Q =  out_memory())
+  	
+  	models[[i]] <- result$p %*% result$q
+  }
+  
+  return(models)
 }
 
-KNN <-- function(dataIn,maxRating,embedMeans,specialArgs) {
+NMFPredict <- function(probsFitOut,newData) {
+	nNewData <- nrow(newData)
+	
+	models <- probsFitOut$models
+	nModels <- length(models)
+	
+	preds <- matrix(nrow = nNewData, ncol = nModels)
+	# For each new datum that we are given
+	for(i in 1:nNewData) {
+		# For each model of a different rating
+		for(j in 1:nModels) {
+			newDatum <- newData[j]
+			preds[i,j] <- models[[i]][newDatum[1],newDatum[2]]
+		}
+	}
+	
+	# rows returned are the predictions of each rating for a new datum
+	return(preds)
+}
+
+KNN <- function(dataIn,maxRating,embedMeans,specialArgs) {
   # embedMeans: look at entire database, find all the users who've rated this item
   # get costDistance
   # should be on page 80-ish of book
@@ -83,8 +117,8 @@ embedDataMeans <- function(dataIn) {
 
   # mean ratings for an item
   # switch userid and itemid so that
-  ud1 <- formUserData(dataIn[,c('itemID', 'userID', 'rating')])
-  mean_items <- sapply(ud1, function(oneitm) mean(oneitm$ratings))
+  udReversed <- formUserData(dataIn[,c('itemID', 'userID', 'rating')])
+  mean_items <- sapply(udReversed, function(oneitm) mean(oneitm$ratings))
 
   # create new columns that holds the user_mean and item_mean
   # assuming that the user named the column headings as userID and itemID
