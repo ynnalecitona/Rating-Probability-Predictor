@@ -112,10 +112,7 @@ dataToTable <- function(dataIn) {
   dt <- as.data.table(dataIn)
 
   # creates the matrix entries, and fill empty ones with NAs
-  userID <- names(dataIn)[1]
-  itemID <- names(dataIn)[2]
-  valueName <- names(dataIn)[3]
-  formula <- paste(c(userID, itemID), collapse = '~')
-  mat <- dcast(dt, formula, fill = NA, value.var=valueName)
+  mat <- dcast(dt, userID~itemID, fill = NA)[-1]
+
   return(mat)
 }
