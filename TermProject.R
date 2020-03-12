@@ -115,7 +115,7 @@ dataToTable <- function(dataIn) {
   userID <- names(dataIn)[1]
   itemID <- names(dataIn)[2]
   valueName <- names(dataIn)[3]
-  formula <- paste(c(userID, itemID), sep = '~')
+  formula <- paste(c(userID, itemID), collapse = '~')
   mat <- dcast(dt, formula, fill = NA, value.var=valueName)
   return(mat)
 }
