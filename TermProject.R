@@ -107,7 +107,7 @@ embedDataMeans <- function(dataIn) {
   return(mappings)
 }
 
-dataToMatrix <- function(dataIn) {
+dataToTable <- function(dataIn) {
   # turns data frame into data.table which is more enhanced than data.frame
   dt <- as.data.table(dataIn)
 
