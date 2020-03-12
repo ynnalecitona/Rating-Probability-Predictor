@@ -36,7 +36,7 @@ Logit <- function(dataIn,maxRating,embedMeans,specialArgs) {
   # prediction probabilities approach: pg. 36 of book, 3.3.6.3
 }
 
-NMF <- function(dataIn,maxRating,specialArgs) {
+NMFTrain <- function(dataIn,maxRating,specialArgs) {
   # does not need embedMeans
   rank <- specialArgs$rank
   
@@ -47,10 +47,32 @@ NMF <- function(dataIn,maxRating,specialArgs) {
   	training <- data_memory(dataIn[,1], dataIn[,2], dataIn[,3], index1 = TRUE)
   	reco$train(training, out_model = "train.txt", opt = list(dim = rank, nmf=TRUE))	
   	
-  	model[[i]] <- reco$output(out_P = out_memory(), out_Q =  out_memory())
+  	result <- reco$output(out_P = out_memory(), out_Q =  out_memory())
+  	
+  	models[[i]] <- result$p %*% result$q
   }
   
   return(models)
+}
+
+NMFPredict <- function(probsFitOut,newData) {
+	nNewData <- nrow(newData)
+	
+	models <- probsFitOut$models
+	nModels <- length(models)
+	
+	preds <- matrix(nrow = nNewData, ncol = nModels)
+	# For each new datum that we are given
+	for i in 1:nNewData {
+		# For each model of a different rating
+		for j in 1:nModels {
+			newDatum <- newData[j]
+			preds[i,j] <- models[[i]][newDatum[1],newDatum[2]]
+		}
+	}
+	
+	# rows returned are the predictions of each rating for a new datum
+	return(preds)
 }
 
 KNN <-- function(dataIn,maxRating,embedMeans,specialArgs) {
