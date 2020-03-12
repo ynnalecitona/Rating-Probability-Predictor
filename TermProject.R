@@ -118,5 +118,8 @@ dataToMatrix <- function(dataIn) {
   # need to figure out how to change this
   mat <- as.matrix(mat)
 
+  # issue: everything gets converted to numeric
+  class(mat) <- as.numeric(mat)
+
   return(mat)
 }
