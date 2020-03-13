@@ -4,7 +4,8 @@ library(partykit)
 library(data.table)
 
 ratingProbsFit <- function(dataIn,maxRating,predMethod,embedMeans,specialArgs){
-  # Check for errors where using or not using embeded means with an incompatible method. Will return NaN if incompatable.
+  # Check for errors where using or not using embeded means with an incompatible method.
+  # Will stop execution because of invalid inputs. 
   if( embedMeans && predMethod == "NMF" ) {
     stop("Do not need to embed means for NMF.\n")
   }
@@ -17,7 +18,7 @@ ratingProbsFit <- function(dataIn,maxRating,predMethod,embedMeans,specialArgs){
 
   # Convert the last col ( which should be a rating integer > 0 and < maxRating ) into a dummy variable with maxRating columns
   dataIn[,3] <- ratingToDummy(dataIn[,3], maxRatings)
-  
+
   # Call the proper predition method.
   if( predMethod == "logit" ) return(Logit(dataIn,maxRating,embedMeans,specialArgs))
   if( predMethod == "NMF" ) return(NMFTrain(dataIn,maxRating,specialArgs))
@@ -38,23 +39,23 @@ Logit <- function(dataIn,maxRating,embedMeans,specialArgs) {
 NMFTrain <- function(dataIn,maxRating,specialArgs) {
   # does not need embedMeans
   rank <- specialArgs$rank
-  
+
   models <- vector('list', maxRating)
-  
+
   # Over all the output columns
   for( i in 1:maxRating ) {
   	# Factor in the user and item columns to get the current rating column
   	nRatingCol <- i + 2
-  	
+
   	reco <- Reco()
   	training <- data_memory(dataIn[,1], dataIn[,2], dataIn[,nRatingCol], index1 = TRUE)
-  	reco$train(training, out_model = "train.txt", opt = list(dim = rank, nmf=TRUE))	
-  	
+  	reco$train(training, out_model = "train.txt", opt = list(dim = rank, nmf=TRUE))
+
   	result <- reco$output(out_P = out_memory(), out_Q =  out_memory())
-  	
+
   	models[[i]] <- result$P %*% t(result$Q)
   }
-  
+
   outProbFit <- vector('list', 2)
   names(outProbFit) <- c('method', 'models')
   outProbFit$method <- 'NMF'
@@ -64,10 +65,10 @@ NMFTrain <- function(dataIn,maxRating,specialArgs) {
 
 NMFPredict <- function(probsFitOut,newData) {
 	nNewData <- nrow(newData)
-	
+
 	models <- probsFitOut$models
 	nModels <- length(models)
-	
+
 	preds <- matrix(nrow = nNewData, ncol = nModels)
 	# For each new datum that we are given
 	for(i in 1:nNewData) {
