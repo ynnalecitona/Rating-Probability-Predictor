@@ -4,7 +4,6 @@ cosineSim <- function(trainData)
 # specialArgs contains k (i.e. number of nearest neighbours)
 KNN <- function(trainData, maxRating, embedMeans, specialArgs)
 {
-
         #nearestNeighbours <- cosineSim(trainData, specialArgs)
         #manhattanSim()
         #euclideanSim()
@@ -40,10 +39,11 @@ find_kNN <- function(dataIn, k, maxRating, newXs)
                 oneUser <- newXs[i,]
                 targetUserID <- oneUser$userID
                 targetItemID <- oneUser$itemID
-                print(c(targetUserID, targetItemID))
+                #print(c(targetUserID, targetItemID))
 
                 targetUserIdx <- which(rownames(dataIn) == targetUserID)
                 targetItemIdx <- which(colnames(dataIn) == targetItemID)
+                #print(c(targetUserIdx, targetItemIdx))
 
                 if (!is.na(dataIn[targetUserIdx, targetItemIdx])) {
                         ratings <- vector(mode = "integer", length = maxRating)
@@ -59,14 +59,19 @@ find_kNN <- function(dataIn, k, maxRating, newXs)
 
                         # Might consider having na.last = TRUE
                         sortOrder <- sort(simVec, decreasing = TRUE, na.last = NA, index.return = TRUE)
-                        nearestNeighbours <- potentialUsers[sortOrder$ix,]
-                        if (nrow(nearestNeighbours) == 0) {
+                        if (length(sortOrder$ix) == 0) {
                                 ratingPredMat[i,] <- vector(mode = "numeric", length = maxRating)
                         } else {
+                                nearestNeighbours <- potentialUsers[sortOrder$ix,]
                                 # If don't have k nearest neighbours, use as many as there are
-                                numNN <- min(k, nrow(nearestNeighbours))
-                                kNN <- nearestNeighbours[1:numNN,targetItemIdx]
-                                print(kNN)
+
+                                if (length(sortOrder$ix) == 1) {
+                                        kNN <- nearestNeighbours[targetItemIdx]
+                                } else {
+                                        numNN <- min(k, nrow(nearestNeighbours))
+                                        kNN <- nearestNeighbours[1:numNN,targetItemIdx]
+                                }
+                                # print(kNN)
                                 ratings <- vector(mode = "numeric", length = maxRating)
                                 for (rating in 1:maxRating)
                                         ratings[rating] = length(kNN[kNN == rating]) / numNN
@@ -79,6 +84,23 @@ find_kNN <- function(dataIn, k, maxRating, newXs)
                 }
         }
         return(ratingPredMat)
+}
+
+test_kNN <- function(dataIn, k, maxRating, newXs, correctRatings)
+{
+        if (nrow(newXs) != length(correctRatings)) {
+                print("Different lengths of prediction entries and target ratings")
+                return(-1)
+        } else {
+                ratingPredMat <- find_kNN(dataIn, k, maxRating, newXs)
+                ratingPredMeans <- colMeans(ratingPredMat)
+                actualMeans <- vector(mode = "numeric", length = maxRating)
+                for (rating in 1:maxRating) {
+                        actualMeans[rating] <- length(correctRatings[correctRatings == rating]) / length(correctRatings)
+                }
+                print(ratingPredMeans)
+                print(actualMeans)
+        }
 }
 
 dataToMatrixtmp <- function(dataIn) {
