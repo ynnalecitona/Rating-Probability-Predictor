@@ -41,17 +41,25 @@ NMFTrain <- function(dataIn,maxRating,specialArgs) {
   
   models <- vector('list', maxRating)
   
+  # Over all the output columns
   for( i in 1:maxRating ) {
+  	# Factor in the user and item columns to get the current rating column
+  	nRatingCol <- i + 2
+  	
   	reco <- Reco()
-  	training <- data_memory(dataIn[,1], dataIn[,2], dataIn[,3], index1 = TRUE)
+  	training <- data_memory(dataIn[,1], dataIn[,2], dataIn[,nRatingCol], index1 = TRUE)
   	reco$train(training, out_model = "train.txt", opt = list(dim = rank, nmf=TRUE))	
   	
   	result <- reco$output(out_P = out_memory(), out_Q =  out_memory())
   	
-  	models[[i]] <- result$p %*% result$q
+  	models[[i]] <- result$P %*% t(result$Q)
   }
   
-  return(models)
+  outProbFit <- vector('list', 2)
+  names(outProbFit) <- c('method', 'models')
+  outProbFit$method <- 'NMF'
+  outProbFit$models <- models
+  return(outProbFit)
 }
 
 NMFPredict <- function(probsFitOut,newData) {
@@ -65,11 +73,11 @@ NMFPredict <- function(probsFitOut,newData) {
 	for(i in 1:nNewData) {
 		# For each model of a different rating
 		for(j in 1:nModels) {
-			newDatum <- newData[j]
-			preds[i,j] <- models[[i]][newDatum[1],newDatum[2]]
+			newDatum <- newData[i,]
+			preds[i,j] <- models[[j]][newDatum[[1]],newDatum[[2]]]
 		}
+		preds[i,] <- softmax(preds[i,])
 	}
-	
 	# rows returned are the predictions of each rating for a new datum
 	return(preds)
 }
