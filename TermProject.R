@@ -104,7 +104,7 @@ ratingToDummy <- function(data, maxRatings) {
 
   # Add the new columns to the matrix
 
-  for(i in 0:maxRatings) {
+  for(i in 1:maxRatings) {
     # Create the name for the dummy variable column in format "r + rating number"
     name <- paste("r",toString(i), sep = "")
 
