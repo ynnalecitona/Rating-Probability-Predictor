@@ -1,0 +1,26 @@
+findPi <- function(adj,k) {
+   P <- computeP(adj)
+   Pi <- P
+   if ( k == 0) {
+      e <- eigen(t(p))
+      e1 <- which(e$values == 1)
+      eVec <- e$vectors[,e1]
+      eVecReal <- Re(eVec)
+      return(eVecReal)
+   }
+   for ( i in 2:k) {
+       Pi <- Pi %*% P
+   }
+   Pi
+}
+
+computeP <- function(adj) {
+   sums <- apply(adj, 1, sum)
+   for ( i in 1:nrow(adj) ) {
+      adj[i,] <-  adj[i,]/sums[i]
+   }
+   adj
+}
+
+print(findPi(rbind(c(0,1,0),c(1,0,1),c(1,0,0)),k=10))
+print(findPi(rbind(c(0,1,0),c(1,0,1),c(1,0,0)),k=0))
