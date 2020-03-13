@@ -161,3 +161,20 @@ dataToTable <- function(dataIn) {
   mat <- dcast(dt, formula, fill = NA, value.var=valueName)
   return(mat)
 }
+
+measurePerformance <- function(predProbs, truthValues) {
+	sum <- 0.0
+	# For each prediction we add the probabilty assigned to the correct value.
+	nTruths <- length(truthValues)
+	for ( i in 1:nTruths ) {
+		sum <- sum + predProbs[i, truthValues[i]]
+	}
+	# Return the average probability assigned to the correct value.
+	return( sum / nTruths )
+}
+
+softmax <- function(values, z = 10) {
+	temp <- values * z
+	expValues <- sapply(temp, exp)
+	return( expValues/sum(expValues) )
+}
