@@ -187,18 +187,3 @@ softmax <- function(values, z = 10) {
 	expValues <- sapply(temp, exp)
 	return( expValues/sum(expValues) )
 }
-
-LogitPredict <- function(model) {
-  # Create data frame of userID and the itemID needed to be predicted
-  # example:
-  pred_data = data.frame(userID = 1, itemID = 1127)
-
-  # use predict() function to calculate the predicted probability
-  # argument type = "response" to get the prediction
-  preds <- predict(model, newdata, type ="response")
-
-  # this will need to be put in a for loop because of the fact that
-  # we need it for 1 - maxRating
-
-  # Source: https://www.theanalysisfactor.com/r-tutorial-glm1/
-}
