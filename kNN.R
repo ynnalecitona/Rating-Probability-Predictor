@@ -40,6 +40,7 @@ find_kNN <- function(dataIn, k, maxRating, newXs)
                 oneUser <- newXs[i,]
                 targetUserID <- oneUser$userID
                 targetItemID <- oneUser$itemID
+                print(c(targetUserID, targetItemID))
 
                 targetUserIdx <- which(rownames(dataIn) == targetUserID)
                 targetItemIdx <- which(colnames(dataIn) == targetItemID)
@@ -56,17 +57,21 @@ find_kNN <- function(dataIn, k, maxRating, newXs)
                         for (j in 1:nrow(potentialUsers))
                                 simVec[j] <- cosineSim(potentialUsers[j,], targetUser)
 
-                        sortOrder <- sort(simVec, decreasing = TRUE, na.last = TRUE, index.return = TRUE)
+                        # Might consider having na.last = TRUE
+                        sortOrder <- sort(simVec, decreasing = TRUE, na.last = NA, index.return = TRUE)
                         nearestNeighbours <- potentialUsers[sortOrder$ix,]
-                        # TODO: Check if potentialUsers < k
-                        kNN <- nearestNeighbours[1:k,targetItemIdx]
-
-                        ratings <- vector(mode = "numeric", length = maxRating)
-                        for (rating in 1:maxRating)
-                                ratings[rating] = length(kNN[kNN == rating]) / k
-
-                        print(ratingPredMat[i,])
-                        ratingPredMat[i,] <- ratings
+                        if (nrow(nearestNeighbours) == 0) {
+                                ratingPredMat[i,] <- vector(mode = "numeric", length = maxRating)
+                        } else {
+                                # If don't have k nearest neighbours, use as many as there are
+                                numNN <- min(k, nrow(nearestNeighbours))
+                                kNN <- nearestNeighbours[1:numNN,targetItemIdx]
+                                print(kNN)
+                                ratings <- vector(mode = "numeric", length = maxRating)
+                                for (rating in 1:maxRating)
+                                        ratings[rating] = length(kNN[kNN == rating]) / numNN
+                                ratingPredMat[i,] <- ratings
+                        }
                         #find similarity of each potential user to targetUser
                         #reorder potential user list in descending order, based on similarity
                         #get first k potential users
