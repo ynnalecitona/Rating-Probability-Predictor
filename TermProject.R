@@ -109,7 +109,7 @@ ratingToDummy <- function(data, maxRatings) {
     name <- paste("r",toString(i), sep = "")
 
     # Each value in the new column represents a boolean that is true if the user gave an item the rating "i"
-    data[,numCols + i] <- as.integer(ratings == i)
+    data[,numCols - 1 + i] <- as.integer(ratings == i)
 
     # Add the name to the newly created column
     names(data)[numCols + i] <- name
