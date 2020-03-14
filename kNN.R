@@ -4,18 +4,100 @@ cosineSim <- function(trainData)
 # specialArgs contains k (i.e. number of nearest neighbours)
 KNN <- function(trainData, maxRating, embedMeans, specialArgs)
 {
-        #nearestNeighbours <- cosineSim(trainData, specialArgs)
-        #manhattanSim()
-        #euclideanSim()
-        #chebychevSim()
-        #jaccardSim()
-        #rbfkSim()
-        #dotProdSim()
-        #correlSim()
         #embedMeans()
 }
 
 get_vlen <- function(v) sqrt(v %*% v)
+
+#--------------------Radial Basis Function Kernel similarity--------------------
+
+rbfkSim <- function(potentialUser, targetUser)
+{
+        commItemsIdx <- !is.na(potentialUser) & !is.na(targetUser)
+        if (sum(commItemsIdx) == 0) return(NaN)
+
+        xvec <- potentialUser[commItemsIdx]
+        yvec <- targetUser[commItemsIdx]
+        sigma <- 1
+        exp(-1 * (get_vlen(xvec - yvec) / (2 * (sigma ^ 2))))
+}
+
+#-----------------------------Correlation similarity-----------------------------
+
+correlSim <- function(potentialUser, targetUser)
+{
+        commItemsIdx <- !is.na(potentialUser) & !is.na(targetUser)
+        if (sum(commItemsIdx) == 0) return(NaN)
+
+        xvec <- potentialUser[commItemsIdx]
+        yvec <- targetUser[commItemsIdx]
+        xMean <- mean(xvec)
+        yMean <- mean(yvec)
+        xSd <- sd(xvec)
+        ySd <- sd(yvec)
+        mean((xvec * yvec) - (xMean * yMean)) / (xSd * ySd)
+}
+
+#-----------------------------Dot Product similarity-----------------------------
+
+dotProdSim <- function(potentialUser, targetUser)
+{
+        commItemsIdx <- !is.na(potentialUser) & !is.na(targetUser)
+        if (sum(commItemsIdx) == 0) return(NaN)
+
+        xvec <- potentialUser[commItemsIdx]
+        yvec <- targetUser[commItemsIdx]
+        (xvec %*% yvec)
+}
+
+#-------------------------------Jaccard similarity-------------------------------
+
+jaccardSim <- function(potentialUser, targetUser)
+{
+        # Get non-NA elements
+        xvec <- potentialUser[!is.na(potentialUser)]
+        yvec <- targetUser[!is.na(targetUser)]
+        length(intersect(xvec, yvec)) / length(union(xvec, yvec))
+}
+
+#-------------------------------Chebychev similarity-------------------------------
+
+chebychevSim <- function(potentialUser, targetUser)
+{
+        commItemsIdx <- !is.na(potentialUser) & !is.na(targetUser)
+        if (sum(commItemsIdx) == 0) return(NaN)
+
+        xvec <- potentialUser[commItemsIdx]
+        yvec <- targetUser[commItemsIdx]
+        # Once power by infinity, the max element will overtake all other ones.
+        max(xvec - yvec)
+}
+
+#-------------------------------Euclidean similarity-------------------------------
+
+euclideanSim <- function(potentialUser, targetUser)
+{
+        commItemsIdx <- !is.na(potentialUser) & !is.na(targetUser)
+        if (sum(commItemsIdx) == 0) return(NaN)
+
+        xvec <- potentialUser[commItemsIdx]
+        yvec <- targetUser[commItemsIdx]
+        get_vlen(xvec - yvec)
+}
+
+#-------------------------------Manhattan similarity-------------------------------
+
+manhattanSim <- function(potentialUser, targetUser)
+{
+        commItemsIdx <- !is.na(potentialUser) & !is.na(targetUser)
+        if (sum(commItemsIdx) == 0) return(NaN)
+
+        xvec <- potentialUser[commItemsIdx]
+        yvec <- targetUser[commItemsIdx]
+        sum(xvec - yvec)
+}
+
+#-------------------------------Cosine similarity-------------------------------
 
 cosineSim <- function(potentialUser, targetUser)
 {
@@ -58,7 +140,7 @@ find_kNN <- function(dataIn, k, maxRating, newXs)
                                 simVec[j] <- cosineSim(potentialUsers[j,], targetUser)
 
                         # Might consider having na.last = TRUE
-                        sortOrder <- sort(simVec, decreasing = TRUE, na.last = NA, index.return = TRUE)
+                        sortOrder <- sort(simVec, decreasing = FALSE, na.last = NA, index.return = TRUE)
                         if (length(sortOrder$ix) == 0) {
                                 ratingPredMat[i,] <- vector(mode = "numeric", length = maxRating)
                         } else {
