@@ -22,10 +22,25 @@
 \section{Introduction}
 All quarter we've been predicting item ratings in the format of, "User i rates item j as x", where x is the predicted rating. To take it one step further, the goal of this project is to report the probabilities of a user i, rating item j from min to max rating. For example, for user 20 and movie 10, the probabilities of rating it a 1, 2, 3, ... are 0.102, 0.373, 0.111, ... respectively. We will calculate these probabilities through the use of 4 prediction methods: logit, NMF, kNN, and CART.
 
+\section{Logit}
+
+\section{NMF - Nonnegative Matrix Factorization}
+
+\section{KNN - k Nearest Neighbors}
+
+\section{CART - Classification and Regression Trees}
+
 \section{Helper Functions}
 \subsection{embedDataMeans}
+In certain data sets, it would be difficult to perform predictions directly. There are data sets where the item IDs are not ordinal, hence they don't have underlying ordering. The solution is to create dummy variables for these IDs until moving forward to testing them one at a time.
+For example, say we're using CART as our prediction method and there is a possibility that there would be at most one data point that satisfied two conditions, this creates issues when making trees. Rather than using minsplit, we can embed the user ID and item ID to do dimension reduction. In this function, our goal was to create a new data frame, that includes the mapping between the userID and its mean ratings, as well as the itemID and its mean ratings.
+
+\subsection{dataToMatrix}
+The goal of this function is to make data handling for KNN and NMF easier. This functions turns our data frame into a data table, and creates a matrix like form of data with the userID's corresponding rating to itemID. With this function, the entries are replaced with NA if the user has not rated the item.
 
 \subsection{ratingToDummy}
+
+
 
 \section{Who Did What}
 \subsection{Leo}
@@ -39,6 +54,6 @@ All quarter we've been predicting item ratings in the format of, "User i rates i
 \subsection{Jessica}
 
 \section{Sources}
-Conveting data frame to a matrix: https://stackoverflow.com/questions/26207850/create-sparse-matrix-from-a-data-frame?fbclid=IwAR37BJ4Q9EX8UrbtK0MhEI2u6rEC7k_G_MFjdlOUAmkcjs5jmApMUdgbjSI
+Converting data frame to a matrix: https://stackoverflow.com/questions/26207850/create-sparse-matrix-from-a-data-frame?fbclid=IwAR37BJ4Q9EX8UrbtK0MhEI2u6rEC7k_G_MFjdlOUAmkcjs5jmApMUdgbjSI
 
 \end{document}
