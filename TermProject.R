@@ -17,8 +17,13 @@ ratingProbsFit <- function(dataIn,maxRating,predMethod,embedMeans,specialArgs){
   if( embedMeans ) dataIn <- embedDataMeans(dataIn)
 
   # Convert the last col ( which should be a rating integer > 0 and < maxRating ) into a dummy variable with maxRating columns
+<<<<<<< Updated upstream
   dataIn[,3] <- ratingToDummy(dataIn[,3], maxRatings)
 
+=======
+  dataIn <- ratingToDummy(dataIn, maxRating)
+  
+>>>>>>> Stashed changes
   # Call the proper predition method.
   if( predMethod == "logit" ) return(Logit(dataIn,maxRating,embedMeans,specialArgs))
   if( predMethod == "NMF" ) return(NMFTrain(dataIn,maxRating,specialArgs))
@@ -27,7 +32,10 @@ ratingProbsFit <- function(dataIn,maxRating,predMethod,embedMeans,specialArgs){
 }
 
 predict <- function(probsFitOut,newXs) {
-
+  if( probsFitOut$predMethod == "logit" ) return(Logit(dataIn,maxRating,embedMeans,specialArgs))
+  if( probsFitOut$predMethod == "NMF" ) return(NMFPredict(probsFitOut,newXs))
+  if( probsFitOut$predMethod == "kNN" ) return(KNN(dataIn,maxRating,embedMeans,specialArgs))
+  if( probsFitOut$predMethod == "CART" ) return(CART(dataIn,maxRating,specialArgs))
 }
 
 
@@ -46,26 +54,28 @@ NMFTrain <- function(dataIn,maxRating,specialArgs) {
   for( i in 1:maxRating ) {
   	# Factor in the user and item columns to get the current rating column
   	nRatingCol <- i + 2
-
+  	
   	reco <- Reco()
   	training <- data_memory(dataIn[,1], dataIn[,2], dataIn[,nRatingCol], index1 = TRUE)
-  	reco$train(training, out_model = "train.txt", opt = list(dim = rank, nmf=TRUE))
-
+  	reco$train(training, out_model = "train.txt", opt = list(dim = rank, nmf=TRUE))	
+  	
   	result <- reco$output(out_P = out_memory(), out_Q =  out_memory())
-
+  	
   	models[[i]] <- result$P %*% t(result$Q)
   }
-
-  outProbFit <- vector('list', 2)
+  
+  outProbFit <- vector('list', 3)
   names(outProbFit) <- c('method', 'models')
-  outProbFit$method <- 'NMF'
+  outProbFit$predMethod <- 'NMF'
+  outProbFit$z <- specialArgs$z
   outProbFit$models <- models
+
   return(outProbFit)
 }
 
 NMFPredict <- function(probsFitOut,newData) {
 	nNewData <- nrow(newData)
-
+	
 	models <- probsFitOut$models
 	nModels <- length(models)
 
@@ -113,7 +123,7 @@ ratingToDummy <- function(data, maxRatings) {
     data[,numCols - 1 + i] <- as.integer(ratings == i)
 
     # Add the name to the newly created column
-    names(data)[numCols + i] <- name
+    names(data)[numCols - 1 + i] <- name
   }
 
   return(data)
@@ -172,17 +182,32 @@ dataToMatrix <- function(dataIn) {
 }
 
 measurePerformance <- function(predProbs, truthValues) {
-	sum <- 0.0
-	# For each prediction we add the probabilty assigned to the correct value.
-	nTruths <- length(truthValues)
-	for ( i in 1:nTruths ) {
-		sum <- sum + predProbs[i, truthValues[i]]
-	}
-	# Return the average probability assigned to the correct value.
-	return( sum / nTruths )
+  nTruths <- length(truthValues)
+  maxRating <- ncol(predProbs)
+
+  avgPredProbs <- apply(predProbs, 2, mean)
+
+  truthTotals <- rep(0, maxRating)
+
+  for ( i in 1:nTruths ) { 
+    rating <- truthValues[i]
+    truthTotals[rating] <- truthTotals[rating] + 1
+  }
+
+  truthProbs <- truthTotals/nTruths
+
+  print("The average distribution we compute is:")
+  print(avgPredProbs)
+  print("the true distribution was:")
+  print(truthProbs)
+  print("The absolute percetage error is:")
+  print(abs(avgPredProbs - truthProbs))
+  print('The mean absolute percetage error is:')
+  print(mean(abs(avgPredProbs - truthProbs)))
+  return(mean(abs(avgPredProbs - truthProbs)))
 }
 
-softmax <- function(values, z = 10) {
+softmax <- function(values, z = 1) {
 	temp <- values * z
 	expValues <- sapply(temp, exp)
 	return( expValues/sum(expValues) )
