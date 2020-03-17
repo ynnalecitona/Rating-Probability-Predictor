@@ -1,5 +1,18 @@
 \documentclass{article}
 \usepackage[utf8]{inputenc}
+\usepackage{appendix}
+\usepackage{listings}
+\usepackage[svgnames]{xcolor}
+\usepackage{listings}
+
+\lstset{language=R,
+    basicstyle=\small\ttfamily,
+    stringstyle=\color{DarkGreen},
+    otherkeywords={0,1,2,3,4,5,6,7,8,9},
+    morekeywords={TRUE,FALSE},
+    deletekeywords={data,frame,length,as,character},
+    commentstyle=\color{DarkGreen},
+}
 
 \title{ECS 189G Term Project}
 \author{Leo Martinez-Perez
@@ -34,24 +47,129 @@ All quarter we've been predicting item ratings in the format of, "User i rates i
 
 \section{Helper Functions}
 \subsection{embedDataMeans}
-In certain data sets, it would be difficult to perform predictions directly. There are data sets where the item IDs are not ordinal, hence they don't have underlying ordering. The solution is to create dummy variables for these IDs until moving forward to testing them one at a time.
-For example, say we're using CART as our prediction method and there is a possibility that there would be at most one data point that satisfied two conditions, this creates issues when making trees. Rather than using minsplit, we can embed the user ID and item ID to do dimension reduction. In this function, our goal was to create a new data frame, that includes the mapping between the userID and its mean ratings, as well as the itemID and its mean ratings.
+In certain data sets, it would be difficult to perform predictions directly. There are data sets where the item IDs are not ordinal, hence they don't have underlying ordering. The solution is to create dummy variables for these IDs until moving forward to testing them one at a time. 
+For example, say we're using CART as our prediction method and there is a possibility that there would be at most one data point that satisfied two conditions, this creates issues when making trees. Rather than using minsplit, we can embed the user ID and item ID to do dimension reduction. In this function, our goal was to create a new data frame, that includes the mapping between the userID and its mean ratings, as well as the itemID and its mean ratings. 
 
-\subsection{dataToMatrix}
-The goal of this function is to make data handling for KNN and NMF easier. This functions turns our data frame into a data table, and creates a matrix like form of data with the userID's corresponding rating to itemID. With this function, the entries are replaced with NA if the user has not rated the item.
-
-\subsection{ratingToDummy}
-
+\subsection{dataToMatrix} 
+The goal of this function is to make data handling for KNN and NMF easier. This functions turns our data frame into a data table, and creates a matrix like form of data with the userID's corresponding rating to itemID. With this function, the entries are replaced with NA if the user has not rated the item. 
 
 \section{Who Did What}
 \subsection{Leo}
 
 \subsection{Ynna}
 
-\subsection{Mark}
+\subsection{Duong}
 
 \subsection{Tycho}
 
 \subsection{Jessica}
 
+\newpage
+\appendix
+\section{TermProject.R}
+
+\section{Probability Distributions Chart Generator}
+For detailed comments, visit the repository
+/ynnalecitona/ecs189g-termproject.
+\begin{lstlisting}[language=R]
+library(ggplot2)
+library(reshape)
+generate_distributions <- function(data_to_plot) {
+data_to_plot[] <- lapply(data_to_plot, unlist)
+data_to_plot <- melt(data_to_plot)
+names(data_to_plot) <- c("ratings", "probabilities")
+distribution_plot <- ggplot(data_to_plot, 
+aes(ratings, probabilities, 
+col= ratings)) + geom_point() + stat_smooth()
+distribution_plot
+}
+\end{lstlisting}
+
+\section {Experiment Sets Generator}
+For detailed comments, visit the repository
+/ynnalecitona/ecs189g-termproject.
+\begin{lstlisting}[language = R]
+does_contain_all <- function(targetList, checkList)
+{
+    numElementsLacked <- sum(!(checkList %in% targetList))
+    return(numElementsLacked == 0)
+}
+sampling_data <- function(dataIn, sampleSize, 
+verbose = FALSE) 
+{
+    if (sampleSize > nrow(dataIn)) {
+        print("Error: Sample size greater than data size")
+        return(-1)
+    }
+    uniqueUsersTotal <- unique(dataIn[,1])
+    uniqueItemsTotal <- unique(dataIn[,2])
+    samplingIdx <- sample(1:nrow(dataIn), sampleSize)
+    sampleData <- dataIn[samplingIdx,]
+    i <- 1
+    while (!does_contain_all(sampleData[,1], 
+    uniqueUsersTotal) || !does_contain_all(sampleData[,2], 
+    uniqueItemsTotal)) {
+        samplingIdx <- sample(1:nrow(dataIn), sampleSize)
+        sampleData <- dataIn[samplingIdx,]
+        i <- i + 1
+    }
+    if (verbose) {
+        print("Trials needed: ")
+        print(i)
+    }
+    return(sampleData)
+}
+
+create_experiment_sets <- function(dataIn, ratio)
+{
+    if (sum(ratio) != 1) {
+        print("Invalid ratios")
+        return(-1)
+    }
+
+    trainSetSize <- floor(nrow(dataIn) * ratio[1])
+    validationSetSize <- floor(nrow(dataIn) * ratio[2])
+    testSetSize <- nrow(dataIn) - trainSetSize 
+    - validationSetSize
+
+    trainSet <- sampling_data(dataIn, trainSetSize)
+    print("Train set sampling done")
+
+    sampledRows <- as.numeric(rownames(trainSet))
+    leftovers <- dataIn[-sampledRows,]
+    rownames(leftovers) <- 1:nrow(leftovers)
+
+    samplingIdx <- sample(1:nrow(leftovers), 
+    validationSetSize)
+    validationSet <- leftovers[samplingIdx,]
+    print("Validation set sampling done")
+
+    sampledRows <- as.numeric(rownames(validationSet))
+    testSet <- leftovers[-sampledRows,]
+    print("Test set sampling done")
+
+    experiment_sets <- list(trainSet = trainSet, 
+    validationSet = validationSet, testSet = testSet)
+    class(experiment_sets) <- "expSets"
+    return(experiment_sets)
+}
+
+save_experiment_sets <- function(expSets)
+{
+    trainSet <- expSets$trainSet
+    validationSet <- expSets$validationSet
+    testSet <- expSets$testSet
+    write.csv(trainSet, "train.data", row.names = FALSE)
+    write.csv(validationSet, "validation.data", 
+    row.names = FALSE)
+    write.csv(testSet, "test.data", row.names = FALSE)
+}
+
+\end{lstlisting}
+
+\section{Online Resources Used}
+https://tex.stackexchange.com/questions/374001/insert-r-code-in-latex
+
+
 \end{document}
+
