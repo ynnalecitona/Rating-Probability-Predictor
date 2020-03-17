@@ -17,13 +17,10 @@ ratingProbsFit <- function(dataIn,maxRating,predMethod,embedMeans,specialArgs){
   if( embedMeans ) dataIn <- embedDataMeans(dataIn)
 
   # Convert the last col ( which should be a rating integer > 0 and < maxRating ) into a dummy variable with maxRating columns
-<<<<<<< Updated upstream
   dataIn[,3] <- ratingToDummy(dataIn[,3], maxRatings)
 
-=======
   dataIn <- ratingToDummy(dataIn, maxRating)
   
->>>>>>> Stashed changes
   # Call the proper predition method.
   if( predMethod == "logit" ) return(Logit(dataIn,maxRating,embedMeans,specialArgs))
   if( predMethod == "NMF" ) return(NMFTrain(dataIn,maxRating,specialArgs))
@@ -54,16 +51,16 @@ NMFTrain <- function(dataIn,maxRating,specialArgs) {
   for( i in 1:maxRating ) {
   	# Factor in the user and item columns to get the current rating column
   	nRatingCol <- i + 2
-  	
+
   	reco <- Reco()
   	training <- data_memory(dataIn[,1], dataIn[,2], dataIn[,nRatingCol], index1 = TRUE)
-  	reco$train(training, out_model = "train.txt", opt = list(dim = rank, nmf=TRUE))	
-  	
+  	reco$train(training, out_model = "train.txt", opt = list(dim = rank, nmf=TRUE))
+
   	result <- reco$output(out_P = out_memory(), out_Q =  out_memory())
-  	
+
   	models[[i]] <- result$P %*% t(result$Q)
   }
-  
+
   outProbFit <- vector('list', 3)
   names(outProbFit) <- c('method', 'models')
   outProbFit$predMethod <- 'NMF'
@@ -75,7 +72,7 @@ NMFTrain <- function(dataIn,maxRating,specialArgs) {
 
 NMFPredict <- function(probsFitOut,newData) {
 	nNewData <- nrow(newData)
-	
+
 	models <- probsFitOut$models
 	nModels <- length(models)
 
@@ -189,7 +186,7 @@ measurePerformance <- function(predProbs, truthValues) {
 
   truthTotals <- rep(0, maxRating)
 
-  for ( i in 1:nTruths ) { 
+  for ( i in 1:nTruths ) {
     rating <- truthValues[i]
     truthTotals[rating] <- truthTotals[rating] + 1
   }
