@@ -128,14 +128,15 @@ testInstEval2 <- function() {
   
   data(InstEval)
   maxRating <- 5
-  dataIn <- ratingToDummy(InstEval[1:5000,c(1,2,7)], maxRating)
+  dataIn <- ratingToDummy(InstEval[1:10000,c(1,2,7)], maxRating)
   names(dataIn)[1] <- "userID"
   names(dataIn)[2] <- "itemID"
   dataIn$userID <- as.factor(dataIn$userID)
   dataIn$itemID <- as.factor(dataIn$itemID)
+  dataIn <- na.omit(dataIn)
   
-  #train <- sample(1:nrow(dataIn), floor(0.95 * nrow(dataIn)), replace = FALSE)
-  #test <- setdiff(1:nrow(dataIn), train)
+  train <- sample(1:nrow(dataIn), floor(0.95 * nrow(dataIn)), replace = FALSE)
+  test <- setdiff(1:nrow(dataIn), train)
 
   n <- floor(0.95 * nrow(dataIn))
   cond <- FALSE
@@ -157,33 +158,99 @@ testInstEval2 <- function() {
         cat('Factor level: ', factor, ' violated constraint, retrying.\n')
         cond <- FALSE
       }
-      #if(length(unique(trainLevels)) < length(unique(testLevels))) {
-        #cat('Factor level: ', factor, ' violated constraint, retrying.\n')
-        #cond.met <- FALSE
-      #}
     }
   }
   print(numTries)
   
+  print(head(dataIn[trainIndx,]))
+  print(head(dataIn[testIndx,]))
+  
+  write.table(dataIn[trainIndx,], file = "TrimmedTrain.data")
+  write.table(dataIn[testIndx,], file = "TrimmedTest.data")
 
+    # Generate the probability predictions
+  
+  print("REACHED CHECKPOINT 1")
+  
+  #glmout <- Logit(dataIn[trainIndx,], maxRating, c())
+  
+  print("REACHED CHECKPOINT AFTER GLMOUT")
+  
+  #p <- prediction(glmout, dataIn[testIndx,])
+  
+  print("REACHED CHECKPOINT AFTER PREDICT")
+  
+  # Save the output to a file
+  #write.table(p, file = "LogitPredictions.data")
+  
+}
+
+testInstEval <- function() {
+  
+  # Read in the train and testing data set for InstEval
+  train <- read.csv("train.data")
+  test <- read.csv("test.data")
+  
+  # Format the data
+  maxRating <- 5
+  names(train) <- c('userID', 'itemID', 'rating')
+  names(test) <- c('userID', 'itemID', 'rating')
+  
+  train$userID <- factor(train$userID)
+  train$itemID <- factor(train$itemID)
+  test$userID <- factor(test$userID)
+  test$itemID <- factor(test$itemID)
+  
+  test <- test[,c(1,2)]
+  train <- ratingToDummy(train, maxRating)
+  
   # Generate the probability predictions
   
   print("REACHED CHECKPOINT 1")
   
-  glmout <- Logit(dataIn[trainIndx,], maxRating, c())
+  glmout <- Logit(train, maxRating, c())
   
   print("REACHED CHECKPOINT AFTER GLMOUT")
   
-  p <- prediction(glmout, dataIn[testIndx,])
+  p <- prediction(glmout, test)
   
   print("REACHED CHECKPOINT AFTER PREDICT")
   
   # Save the output to a file
   write.table(p, file = "LogitPredictions.data")
   
+  
 }
 
-testInstEval()
+testInstEval3 <- function() {
+  
+  train <- read.table("TrimmedTrain.data")
+  test <- read.table("TrimmedTest.data")
+  print(head(train))
+  print(head(test))
+  
+  train$userID <- factor(train$userID)
+  train$itemID <- factor(train$itemID)
+  test$userID <- factor(test$userID)
+  test$itemID <- factor(test$itemID)
+  maxRating <- 5
+  test <- test[,c(1,2)]
+  
+  print("REACHED CHECKPOINT 1")
+  
+  glmout <- Logit(train, maxRating, c())
+  
+  print("REACHED CHECKPOINT AFTER GLMOUT")
+  
+  p <- prediction(glmout, test)
+  
+  print("REACHED CHECKPOINT AFTER PREDICT")
+  
+  # Save the output to a file
+  write.table(p, file = "LogitPredictions.data")  
+}
 
-
-
+#testInstEval3()
+p <- read.table("LogitPredictions.data")
+print(sum(p))
+print(nrow(p))
