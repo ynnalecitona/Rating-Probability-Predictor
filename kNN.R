@@ -1,3 +1,5 @@
+require(data.table)
+
 cosineSim <- function(trainData)
 
 # trainData should be in a data.table form
@@ -25,24 +27,11 @@ is_valid_values <- function(k, maxRating)
 
 #-----------------------------kNN similarity funcs-----------------------------
 
+# Similarity value: the bigger == the more similar
+
 get_vlen <- function(v) sqrt(v %*% v)
 
-# Similarity value: the smaller == the more similar
-# Min val: 0 => 2 vectors are the same
-
 #----------In-house similarity----------
-
-inhouseSim2 <- function(potentialUser, targetUser)
-{
-        commItems <- intersect(names(potentialUser), names(targetUser))
-        if (length(commItems) == 0) return(NA)
-
-        xvec <- potentialUser[which(names(potentialUser) %in% commItems)]
-        yvec <- targetUser[which(names(targetUser) %in% commItems)]
-        angle <-(xvec %*% yvec) / (get_vlen(xvec) * get_vlen(yvec))
-        diff <- get_vlen(xvec - yvec)
-        angle * diff
-}
 
 inhouseSim <- function(potentialUser, targetUser)
 {
@@ -51,9 +40,12 @@ inhouseSim <- function(potentialUser, targetUser)
 
         xvec <- potentialUser[commItemsIdx]
         yvec <- targetUser[commItemsIdx]
-        angle <-(xvec %*% yvec) / (get_vlen(xvec) * get_vlen(yvec))
-        diff <- get_vlen(xvec - yvec)
-        angle * diff
+        yLen <- get_vlen(yvec)
+        dotProd <- (xvec %*% yvec)
+        pCos <- dotProd / yLen
+        p_tCos <- ((xvec - yvec) %*% yvec) / yLen
+        cosine <- dotProd / (get_vlen(xvec) * yLen)
+        (pCos - p_tCos) * cosine
 }
 
 # Since rbfk similarity assigns higher values for more similar pair of vector
@@ -69,12 +61,11 @@ rbfkSim <- function(potentialUser, targetUser)
         xvec <- potentialUser[commItemsIdx]
         yvec <- targetUser[commItemsIdx]
         sigma <- 1
-        1 - (exp(-1 * (get_vlen(xvec - yvec) / (2 * (sigma ^ 2)))))
+        exp(-1 * (get_vlen(xvec - yvec) / (2 * (sigma ^ 2))))
 }
 
-#----------Correlation similarity (abandon)----------
-# Reason: Correlation is a measurement of how much one variable would change if
-#         the other variable changes, which isn't related to our similarity goal.
+#----------Correlation similarity----------
+
 correlSim <- function(potentialUser, targetUser)
 {
         commItemsIdx <- !is.na(potentialUser) & !is.na(targetUser)
@@ -89,37 +80,6 @@ correlSim <- function(potentialUser, targetUser)
         mean((xvec * yvec) - (xMean * yMean)) / (xSd * ySd)
 }
 
-#----------Dot Product similarity (abandon)----------
-# Reason: This method relies too much on the actual value on a variable,
-#         instead of how similar said value is to the
-#         corresponding one for another variable
-# Example: c(0,3) & c(0,3) has a dotProd value of 9
-#          c(0,3) & c(0,5) has a dotProd value of 15
-#          c(0,3) & c(0,1) has a dotProd value of 3
-#       => No clear way to tell which pair is more similar based only on the val.
-dotProdSim <- function(potentialUser, targetUser)
-{
-        commItemsIdx <- !is.na(potentialUser) & !is.na(targetUser)
-        if (sum(commItemsIdx) == 0) return(NaN)
-
-        xvec <- potentialUser[commItemsIdx]
-        yvec <- targetUser[commItemsIdx]
-        (xvec %*% yvec)
-}
-
-#----------Jaccard similarity (abandon)----------
-# Reason: Similar reason for abandoning Dot Product similarity.
-# Example: c(1,5) & c(1,5) has a Jaccard value of 1
-#          c(1,5) & c(5,1) also has a Jaccard value of 1,
-#                          even the pair is clearly very different
-jaccardSim <- function(potentialUser, targetUser)
-{
-        # Get non-NA elements
-        xvec <- potentialUser[!is.na(potentialUser)]
-        yvec <- targetUser[!is.na(targetUser)]
-        1 - (length(intersect(xvec, yvec)) / length(union(xvec, yvec)))
-}
-
 #----------Chebychev similarity----------
 
 chebychevSim <- function(potentialUser, targetUser)
@@ -130,7 +90,7 @@ chebychevSim <- function(potentialUser, targetUser)
         xvec <- potentialUser[commItemsIdx]
         yvec <- targetUser[commItemsIdx]
         # Once power by infinity, the max element will overtake all other ones.
-        max(abs(xvec - yvec))
+        1 / max(abs(xvec - yvec))
 }
 
 #----------Euclidean similarity----------
@@ -142,7 +102,7 @@ euclideanSim <- function(potentialUser, targetUser)
 
         xvec <- potentialUser[commItemsIdx]
         yvec <- targetUser[commItemsIdx]
-        get_vlen(xvec - yvec)
+        1 / get_vlen(xvec - yvec)
 }
 
 #----------Manhattan similarity----------
@@ -154,7 +114,7 @@ manhattanSim <- function(potentialUser, targetUser)
 
         xvec <- potentialUser[commItemsIdx]
         yvec <- targetUser[commItemsIdx]
-        sum(abs(xvec - yvec))
+        1 / sum(abs(xvec - yvec))
 }
 
 #----------Cosine similarity----------
@@ -171,7 +131,7 @@ cosineSim <- function(potentialUser, targetUser)
 
         xvec <- potentialUser[commItemsIdx]
         yvec <- targetUser[commItemsIdx]
-        1 - ((xvec %*% yvec) / (get_vlen(xvec) * get_vlen(yvec)))
+        ((xvec %*% yvec) / (get_vlen(xvec) * get_vlen(yvec)))
 }
 
 #-----------------------------kNN calculations-----------------------------
@@ -182,46 +142,43 @@ find_rated_users <- function(dataIn, targetItemIdx)
         return(dataIn[which(!is.na(dataIn[,targetItemIdx])),])
 }
 
-# Calculate each rated user's similarity to the target user
-# Here is where to choose which similarity func to use
-calc_sims <- function(ratedUsers, targetUser)
+# Calculate each rated user's similarity to the target user.
+# Here is where to choose which similarity function to use.
+calc_sims <- function(ratedUsers, targetUser, numRatedUsers)
 {
-        simVec <- vector(mode = "numeric", length = nrow(ratedUsers))
-        for (i in 1:nrow(ratedUsers))
-                simVec[i] <- inhouseSim(ratedUsers[i,], targetUser)
-        #print(rownames(ratedUsers))
-        #print(simVec)
+        if (numRatedUsers == 1) {
+                simVec <- inhouseSim(ratedUsers, targetUser)
+        } else {
+                simVec <- vector(mode = "numeric", length = nrow(ratedUsers))
+                for (i in 1:numRatedUsers)
+                        simVec[i] <- inhouseSim(ratedUsers[i,], targetUser)
+        }
         return(simVec)
 }
 
 calc_rating_probs <- function(targetUser, targetItemIdx, ratedUsers, simVec,
                               k, maxRating)
 {
-        #print(rownames(ratedUsers))
-        #print(simVec)
-        sortOrder <- sort(simVec, na.last = TRUE, index.return = TRUE)
-        #print(rownames(ratedUsers[sortOrder$ix,]))
-        #print(sortOrder)
+        # Each element in simVec corresponds to the same element in ratedUsers
+        sortOrder <- sort(simVec, decreasing = TRUE, na.last = TRUE, index.return = TRUE)
         if (length(sortOrder$ix) == 0) {
                 # No nearest neighbours found
                 # Return probability vector of all zeros.
                 return(vector(mode = "numeric", length = maxRating))
         } else {
-                nearestNeighbours <- ratedUsers[sortOrder$ix,]
                 if (length(sortOrder$ix) == 1) {
-                        # Since nearestNeighbours is a matrix, it's implicitly
-                        # converted to a vector when there's only 1 entry
-                        # => need a different syntax for indexing
+                        # Only 1 neighbor
+                        nearestNeighbours <- ratedUsers
                         numNN <- 1
                         kNN <- nearestNeighbours[targetItemIdx]
                 } else {
                         # If don't have k nearest neighbours,
-                        # use as many as there are
+                        #       use as many as there are
+                        nearestNeighbours <- ratedUsers[sortOrder$ix,]
                         numNN <- min(k, nrow(nearestNeighbours))
                         kNN <- nearestNeighbours[1:numNN,targetItemIdx]
                 }
-                #print(rownames(nearestNeighbours))
-                #print(simVec[sortOrder$ix])
+                # Vector of each rating's frequency among k nearest neighbours
                 ratings <- vector(mode = "numeric", length = maxRating)
                 for (rating in 1:maxRating)
                         ratings[rating] = length(kNN[kNN == rating]) / numNN
