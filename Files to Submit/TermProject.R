@@ -20,7 +20,7 @@ ratingProbsFit <- function(dataIn,maxRating,predMethod,embedMeans,specialArgs){
   dataIn[,3] <- ratingToDummy(dataIn[,3], maxRatings)
 
   dataIn <- ratingToDummy(dataIn, maxRating)
-  
+
   # Call the proper predition method.
   if( predMethod == "logit" ) return(Logit(dataIn,maxRating,embedMeans,specialArgs))
   if( predMethod == "NMF" ) return(NMFTrain(dataIn,maxRating,specialArgs))
@@ -124,7 +124,7 @@ CARTPredict <- function(probsFitOut,newXs) {
   newXs$itemID <- sapply(newXs$itemID, lookUp, probsFitOut$mappings$itemID, probsFitOut$mappings$item_mean)
 
   ratings <- predict(probsFitOut$party, newXs, type="prob")
-  
+
   computeProbs <- function(ecdfFunc, maxRating) probs <- sapply(1:maxRating, function(rating) ecdfFunc(rating + 0.5) - ecdfFunc(rating - 0.5))
   ratingProbs <- sapply(ratings, computeProbs, probsFitOut$maxRating)
   t(ratingProbs)
@@ -168,16 +168,6 @@ embedDataMeans <- function(dataIn) {
   # assuming that the user named the column headings as userID and itemID
   dataIn$user_mean <- mean_users[dataIn$userID]
   dataIn$item_mean <- mean_items[dataIn$itemID]
-
-  # To remove duplicated data
-  # mappings_users <- dataIn[, c('userID', 'user_mean')]
-  # mappings_users <- unique(mappings_users)
-
-  # mappings_items <- dataIn[, c('itemID', 'item_mean')]
-  # mappings_items <- unique(mappings_items)
-  # mappings_items <- mappings_items[order(mappings_items$itemID),]
-
-  # Can't merge the two, columns don't match
 
   # return a data frame that maps userid with user mean and
   # itemid with item mean
