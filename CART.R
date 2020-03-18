@@ -3,6 +3,27 @@ library(rectools)
 library(partykit)
 library(data.table)
 
+reformatDF <- function(df) {
+    names(df) <- c('userID', 'itemID', 'rating')
+    df$userID <- as.factor(df$userID)
+    df$itemID <- as.factor(df$itemID)
+    df
+}
+
+saveRatingProbs <- function(trainFileName, validFileName, testFileName, outFileNames) {
+    train <- reformatDF(read.csv(trainFileName))
+    valid <- reformatDF(read.csv(validFileName))
+    test <- reformatDF(read.csv(testFileName))
+    
+    recProbs <- CART(train,5,TRUE,list())
+    
+    ratingProbsValid <- CARTPredict(recProbs, valid[,-3])
+    ratingProbsTest <- CARTPredict(recProbs, test[,-3])
+    
+    write(t(ratingProbsValid), outFileNames[1])
+    write(t(ratingProbsTest), outFileNames[2])
+}
+
 measureAccuracy <- function(ratingProbs,actualVals,maxRating) {
   comparisonMatrix <- matrix(0, nrow=maxRating, ncol=2)
   for (i in 1:maxRating) {

@@ -32,7 +32,7 @@ predict <- function(probsFitOut,newXs) {
   if( probsFitOut$predMethod == "logit" ) return(Logit(dataIn,maxRating,embedMeans,specialArgs))
   if( probsFitOut$predMethod == "NMF" ) return(NMFPredict(probsFitOut,newXs))
   if( probsFitOut$predMethod == "kNN" ) return(KNN(dataIn,maxRating,embedMeans,specialArgs))
-  if( probsFitOut$predMethod == "CART" ) return(CART(dataIn,maxRating,specialArgs))
+  if( probsFitOut$predMethod == "CART" ) return(CARTPredict(probsFitOut,newXs))
 }
 
 
@@ -98,8 +98,36 @@ KNN <- function(dataIn,maxRating,embedMeans,specialArgs) {
 
 }
 
-CART <- function(dataIn,maxRating,embedMeans,specialArgs) {
-  # has to use embedMeans
+CART <- function(dataIn,maxRating,specialArgs) {
+  recProbs <- list(predMethod="CART", maxRating=maxRating)
+  class(recProbs) <- "recProbs"
+
+  # map user ID to user's mean rating, item ID to item's mean rating
+  mappings <- embedDataMeans(dataIn)
+  recProbs$mappings <- mappings
+  dataIn$userID <- mappings$user_mean
+  dataIn$itemID <- mappings$item_mean
+
+  args <- specialArgs
+  args$formula <- as.formula('rating ~ .')
+  args$data <- dataIn
+
+  ctout <- do.call(ctree, args)
+  recProbs$party <- ctout
+  recProbs
+}
+
+CARTPredict <- function(probsFitOut,newXs) {
+  # transform newXs
+  lookUp <- function(onekey, keys, vals) vals[which(as.character(keys) == as.character(onekey))[1]]
+  newXs$userID <- sapply(newXs$userID, lookUp, probsFitOut$mappings$userID, probsFitOut$mappings$user_mean)
+  newXs$itemID <- sapply(newXs$itemID, lookUp, probsFitOut$mappings$itemID, probsFitOut$mappings$item_mean)
+
+  ratings <- predict(probsFitOut$party, newXs, type="prob")
+  
+  computeProbs <- function(ecdfFunc, maxRating) probs <- sapply(1:maxRating, function(rating) ecdfFunc(rating + 0.5) - ecdfFunc(rating - 0.5))
+  ratingProbs <- sapply(ratings, computeProbs, probsFitOut$maxRating)
+  t(ratingProbs)
 }
 
 #### HELPER FUNCTIONS ####
