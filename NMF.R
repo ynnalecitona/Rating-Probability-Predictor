@@ -27,6 +27,7 @@ ratingProbsFit <- function(dataIn,maxRating,predMethod,embedMeans,specialArgs){
 }
 
 NMFTrain <- function(dataIn,maxRating,specialArgs) {
+	total_time <- Sys.time()
 	# The list object to be outputted containing 3 values the prediction method and the list of trained models
 	outProbFit <- vector('list', 3)
 	names(outProbFit) <- c('predMethod', 'models', 'z')
@@ -46,6 +47,8 @@ NMFTrain <- function(dataIn,maxRating,specialArgs) {
 		nthread <- specialArgs$nthread
 	}
 
+	index1 <- specialArgs$index1
+
 	# Over all the output columns
 	for( i in 1:maxRating ) {
 		# Factor in the user and item columns to get the current rating column
@@ -54,14 +57,26 @@ NMFTrain <- function(dataIn,maxRating,specialArgs) {
 		reco <- Reco()
 
 		# Init the training data for the current rating column
-		training <- data_memory(dataIn[,1], dataIn[,2], dataIn[,nRatingCol], index1 = TRUE)
+		training <- data_memory(dataIn[,1], dataIn[,2], dataIn[,nRatingCol], index1 = index1)
 		if( givenRank ){
 			reco$train(training, out_model = tempfile(), opt = list(dim = rank, nmf=TRUE, nthread = nthread))
 		}
 		else {
 			print("Begining to tune the Reco Model")
-			tuned <- reco$tune(training, opts = list(dim = c(5,10,25,50,100,200), nmf = TRUE, nthread = nthread, progress = TRUE, verbose = TRUE))
+			print("Rating:")
+			print(i)
+			start_time <- Sys.time()
+			tuned <- reco$tune(training, opts = list(dim = c(25,50,100,200), nmf = TRUE, nthread = nthread, progress = TRUE, verbose = TRUE))
+			end_time <- Sys.time()
+
 			print('Finished tuning the Reco Model')
+			print("Rating:")
+			print(i)
+			print("Current tume time:")
+    		print(end_time - start_time)
+    		print("Total time:")
+    		print(end_time - total_time)
+
 			reco$train(training, opts = tuned$min)
 		}
 			  	
