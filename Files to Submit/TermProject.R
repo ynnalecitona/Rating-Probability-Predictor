@@ -13,15 +13,23 @@ ratingProbsFit <- function(dataIn,maxRating,predMethod,embedMeans,specialArgs){
     stop("Mandatory for CART to embed means.\n")
   }
 
-  # If using embeded means replace the data with embeded data.
-  if( embedMeans ) dataIn <- embedDataMeans(dataIn)
-
   dataIn <- ratingToDummy(dataIn, maxRating)
 
+  if( predMethod == "logit") return(Logit(dataIn,maxRating))
   # Call the proper predition method.
-  if( predMethod == "logit" ) return(Logit(dataIn,maxRating))
+  if( predMethod == "logit" && embedMeans) {
+    dataIn <- embedDataMeans(dataIn)
+    return(Logit(dataIn,maxRating))
+  }
+  
   if( predMethod == "NMF" ) return(NMFTrain(dataIn,maxRating,specialArgs))
-  if( predMethod == "kNN" ) return(KNN(dataIn,maxRating,embedMeans,specialArgs))
+  
+  if( predMethod == "kNN") return(KNN(dataIn,maxRating,embedMeans,specialArgs))
+  if( predMethod == "kNN" && embedMeans) {
+    dataIn <- embedDataMeans(dataIn)
+    return(KNN(dataIn,maxRating,embedMeans,specialArgs))
+  }
+  
   if( predMethod == "CART" ) return(CART(dataIn,maxRating,specialArgs))
 }
 
