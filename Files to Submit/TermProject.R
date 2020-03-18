@@ -15,17 +15,17 @@ ratingProbsFit <- function(dataIn,maxRating,predMethod,embedMeans,specialArgs){
 
   dataIn <- ratingToDummy(dataIn, maxRating)
 
-  if( predMethod == "logit") return(Logit(dataIn,maxRating))
+  if( predMethod == "logit" ) return(Logit(dataIn,maxRating))
   # Call the proper predition method.
-  if( predMethod == "logit" && embedMeans) {
+  if( predMethod == "logit" && embedMeans ) {
     dataIn <- embedDataMeans(dataIn)
     return(Logit(dataIn,maxRating))
   }
   
   if( predMethod == "NMF" ) return(NMFTrain(dataIn,maxRating,specialArgs))
   
-  if( predMethod == "kNN") return(KNN(dataIn,maxRating,embedMeans,specialArgs))
-  if( predMethod == "kNN" && embedMeans) {
+  if( predMethod == "kNN" ) return(KNN(dataIn,maxRating,embedMeans,specialArgs))
+  if( predMethod == "kNN" && embedMeans ) {
     dataIn <- embedDataMeans(dataIn)
     return(KNN(dataIn,maxRating,embedMeans,specialArgs))
   }
