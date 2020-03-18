@@ -9,10 +9,18 @@ library(reshape)
 #################### Function Goal ####################
 # Function generates a plot that shows probability distributions
 
-generate_distributions <- function(data_to_plot) {
+generate_scatter_plot <- function(data_to_plot) {
 data_to_plot[] <- lapply(data_to_plot, unlist)
 data_to_plot <- melt(data_to_plot)
 names(data_to_plot) <- c("ratings", "probabilities")
 distribution_plot <- ggplot(data_to_plot, aes(ratings, probabilities, col= ratings)) + geom_point() + stat_smooth()
 distribution_plot
+}
+
+generate_bar_plot <- function(data_to_plot) {
+  data_to_plot[] <- lapply(data_to_plot, unlist)
+  data_to_plot <- melt(data_to_plot)
+  names(data_to_plot) <- c("ratings", "probabilities")
+  data_to_plot <- ggplot(data_to_plot, aes(ratings, probabilities, col= ratings)) + geom_bar(stat="identity") + theme_minimal()
+  data_to_plot
 }
