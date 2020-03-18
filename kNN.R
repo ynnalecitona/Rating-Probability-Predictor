@@ -186,7 +186,18 @@ calc_rating_probs <- function(targetUser, targetItemIdx, ratedUsers,
         }
 }
 
-# Assumptions:
+save_mat <- function(ratingPredMat, i, fileName)
+{
+        print("Saving matrix")
+        name <- paste(fileName,".mat", i, sep="")
+        write.csv(ratingPredMat, name, row.names = FALSE)
+        # Only keep latest 5 iterations
+        oldFileName <- paste(fileName,".mat", i - 5*10000, sep="")
+        if (file.exists(oldFileName))
+                unlink(oldFileName)
+}
+
+# find_kNN's assumptions:
 #       1. newXs doesn't contain any new users or items
 #       2. ratings have consecutive integer values, ranging from 1 to maxRating.
 
@@ -221,6 +232,8 @@ find_kNN_small <- function(dataIn, k, maxRating, newXs, fileName)
                                                                k,
                                                                maxRating)
                 }
+                if (i %% 10000 == 0)
+                        save_mat(ratingPredMat, i, fileName)
         }
         return(ratingPredMat)
 }
@@ -265,6 +278,8 @@ find_kNN_big <- function(dataIn, k, maxRating, newXs, fileName)
                                                                k,
                                                                maxRating)
                 }
+                if (i %% 10000 == 0)
+                        save_mat(ratingPredMat, i, fileName)
         }
         return(ratingPredMat)
 }
