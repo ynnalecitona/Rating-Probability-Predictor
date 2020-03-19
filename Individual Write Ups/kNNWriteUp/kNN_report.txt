@@ -1,0 +1,170 @@
+-----Section 1: Data Sampling-----
+I. Sampling method
+Our sampling method consists of 2 steps:
+	1. Sample for the training set first, making sure that all user ids and item ids in the data set are in the training set at least once.
+	2. Divide the remaining entries--through random sampling--into the validation set and the test set.
+
+For InstEval's training set, we randomly sampled from the data set until we get one that has all the user ids and item ids. Then, we proceeded with step 2.
+
+For SongList's training set, the above method took too long since we're sampling 1.6 million entries (80% of SongList). Instead, we first sampled an entry for each user in SongList. We then find the item ids not presented in this initial sample, then sampled an entry for each of those items. Combining the first and second samples, we now have all user ids and item ids sampled. Finally, we sampled the remaining data in SongList until we have a combined 1.6 million entries to make our training set. Then, we proceeded with step 2.
+	+ For the sampling of each user (the first sampling), we utilized the fact that SongList is ordered by user ids, and that each user has exactly 10 ratings, for our sampling. 
+		+ We first sample a random number for each multiple of 10 period (i.e. one random number in the [1:10] range, then another in the [11:20] range, and so on).
+		+ We then take the randomly sampled numbers to extract the entries from SongList.
+		+ We then proceeded with the remaining item ids as stated above.
+
+II. Datasets chosen
+For our project, we chose the InstEval data set (73421 entries) and the Song List data set (2000000 entries).
+
+We chose InstEval because our group is familiar with this data set, and the number of entries are small enough for our prediction models to finish execution in a short amount of time.
+
+We chose Song List because the data set is larger, therefore allow us to understand how our program will perform under larger data sets. Also, we like songs.
+
+III. Division proportions
+For InstEval, we divided the training set, validation set, and test set into a (70%, 20%, 10%) ratio.
+
+For Song List, because more data is available, we divided the training set, validation set, and test set into a (80%, 10%, 10%) ratio.
+
+-----Section 2: K-Nearest-Neighbors (kNN)-----
+
+I. Overview
+The kNN algorithm can, given a data point p, determine the k other points in the dataset that are most "similar" to p. Said similarity metric can be calculated using a similarity function--any function whose output changes according to how similar in value one data point is to another.
+
+For our project:
+	+ The data points are rating vectors, where each vector contains a user's ratings for all available items.
+		+ Items that a user hasn't rated will have a rating of NA.
+	+ We view the higher the similarity value between two vectors, the more similar those two vectors are.
+		+ Similarity values can be either positive or negative.
+		+ A few similarity values are provided, and can be used by changing the code in the calc_sims() function 
+	+ If a user has less than k nearest neighbours, we'll use as many as there are available.
+
+Given a user U and an item I that said user has never rated before, by using kNN's similarity metric, we can find the k users who have rated I that are most similar to user U, and, based on their ratings of item I, predict what rating would user U most likely give for item I.
+
+Although we found the idea behind kNN to be intuitive, implementing a general kNN program within R proved quite challenging, mainly in these areas:
+1. Choice of data format
+2. Choice of similarity function
+
+II. Choice of data format
+Since the kNN method requires access to specific user rating vectors in its calculation, we initially decided on representing the input dataset as a matrix. Each row would represent a user, each column would represent an item, and each entry in the matrix would represent a rating. As mentioned before, items that a user hasn't rated would have a rating of NA. 
+
+Initially, this format worked quite well, as we were able to perform prediction on the InstEval dataset, using 51394 known ratings (train set) to predict 14684 new user and item entries (validation set), in roughly 1 minute. 
+
+However, the problem arose when we tried to run our kNN program on Song List, a medium size dataset with 2 million entries. With 200 thousand unique users and more than 127 thousand unique items, the resulting rating matrix was too large to be represented in R.
+
+Following the recommendation in the textbook, we first tried to represent the Song List dataset using the rectools package's formUserData() function. However, the convertion took too long so we gave up on this idea.
+
+Then, we tried switching to using a simple data.frame structure to represent the input dataset. Now, whenever kNN requires a specific user rating vector, we would search through the input dataset, find all ratings belong to the specified user, and construct said vector. This meant that for a user U and k neighbors, we would perform the searching k+1 times. With this method, we could finally handle Song List. 
+
+However, said dataset searching and rating vector construction lead to a severe decrease in performance. Using the same InstEval prediction case as above, this new data format finished prediction in roughly 6 minutes. Even worse, when we tried running our kNN program on Song List, using 1.6 million known ratings (train set) to predict 200 thousand new user and item entries (validation set), the program didn't finished even after nearly 30 hours.
+
+Knowing that the main problem lied in the searching, we decided to combine our two formats together. The overal input data set would still be a data.frame object, but for every prediction of a certain user U and an item I, we would first extract the ratings of all users who have rated item I--as well as that of user U--from the input data set (using indexing). Then, we would construct a matrix from the extracted data set. Finally, we would perform kNN using said matrix. 
+
+With this hybrid format, we successfully performed kNN on Song List in roughly 3 hours, a significant decrease from 30 hours (unfinished).
+
+Moreover, we discovered that with this format, for any one prediction instance, the matrix that we had to use was much smaller than the one created by converting the entire input data set.
+This effect stemmed from two reasons:
+	1. At any instance, we only considered (and then converted to matrix) a small portion of the users in the data set. Therefore, the resulting matrix had much less rows.
+	2. At any instance, regarding the users we considered, the combine total number of unique items that they have rated was only a portion of the number of unique items in the data set. Therefore, the resulting matrix had much less columns.
+We regarded this space-saving result to be a good tradeoff for the matrix construction we had to perform for every new prediction request.
+
+However, for smaller datasets like InstEval, this method wasn't ideal, as we could have used the matrix resulting from the first format in all of our predictions--thereby going from O(n) to O(1) regarding data set setup. Therefore, we decided to combine the techniques again, this time regarding data set size. For data sets that can be entirely presented with an R matrix, we would use the first format; for data sets that couldn't, we would use the hybrid format. This ensured the best of both worlds in terms of both time and space complexities.
+
+III. Choice of similarity function
+Considering that kNN revolves around the idea of similarity, we believe that choosing a good similarity function is very important. Therefore, we searched the Internet for potential similarity functions and found 8 different ones. Moreover, based on our observations of the found similarity functions' behaviors, we also made 1 of our own.
+
+1. Cosine similarity function:
+Reference link: https://en.wikipedia.org/wiki/Cosine_similarity
+This is one of the most common ones because of its intuitive idea, simple calculation, decent results.
+
+2, 3, 4. Manhattan, Euclidean, and Chebychev distance functions:
+Reference link: https://dataaspirant.com/2015/04/11/five-most-popular-similarity-measures-implementation-in-python/
+These are l-p norm functions with different values for p (1 for Manhattan, 2 for Euclidean, and infinity for Chebychev). While they have similar advantages as the cosine similarity function, the results they produced for InstEval were slightly worse (except for Chebychev, which sometimes produced slightly better results than Cosine).
+
+5. Jaccard similarity function (not considered):
+Reference link: https://dataaspirant.com/2015/04/11/five-most-popular-similarity-measures-implementation-in-python/
+Unlike the previous 4 which involves more geometry, Jaccard similarity comes from set theory and has a simple idea: the more elements 2 sets share, the more similar they are to each other. This is acceptable in the set case, but doesn't translate well in our (user,item) scenario. Just because two users have rated the same item doesn't mean they are more similar to each other--their ratings of said item also matter. Therefore, we didn't keep this function in our program.
+
+6. Dot product similarity function (not considered):
+Reference link: https://developers.google.com/machine-learning/clustering/similarity/measuring-similarity
+This function is the numerator of the fraction that computes the Cosine similarity. While the Google Developers website suggested this as a possible similarity function, we found a major flaw in its working--this method relies too much on the actual value of a variable, instead of how similar said value is to the corresponding one of another variable. 
+
+For example:
+Vectors (0,3) and (0,3) has a dot product value of 9
+Vectors (0,3) and (0,5) has a dot product value of 15
+Vectors (0,3) and (0,1) has a dot product value of 3
+
+We can see that there isn't a clear way to tell which pair is more similar based only on the value, even though it should be obvious that the answer is the first pair. Therefore, we didn't keep this function in our program.
+
+7. Correlation function:
+Reference link: http://www.analytictech.com/mb876/handouts/distance_and_correlation.htm
+We came up with the idea of using correlation as a similarity metric for our kNN, then found a website that supported it. The gist is that if two users are similar to each other in terms of rating behavior, when one user rates an item highly, the other user should also rate similarly. This is a behavior that correlation represents. In terms of results, this function performs surprisingly well, being even better than the Cosine similarity.
+
+8. Radial basis function kernel:
+Reference link: https://en.wikipedia.org/wiki/Radial_basis_function_kernel
+While this kernel function sees more use in support vector machine classification, according to Wikipedia, its value "decreases with distance and ranges between zero...and one...(and therefore has) a ready interpretation as a similarity measure." Testing shows that its performance was slightly worse than Cosine similarity.
+
+9. Inhouse function:
+Given 3 vectors a, b, and c. If the angle between a and b is different from the angle between a and c, then the Cosine similarity can determine which of b and c are more similar to a. However, said prediction based on the angle between 2 vectors isn't always right.
+	a. If the angle between a and b is the same as that between a and c, Cosine similarity would view b and c as equally similar to a, regardless of the vectors' length.
+		Ex: a = (1,2), b = (1,2), c = (2, 4). The angle between a and b and that between a and c are both 0 => cos(0) = 1 for both cases. However, we can see that b is more similar to a and c is--in fact, b is exactly a. But the cosine similarity can't capture that.
+	b. Moreover, even if the angle between a and b is smaller than that between a and c, that doesn't necessary mean that b is more similar to a than c.
+		Ex: a = (1,2), b = (2,4), c = (1, 3). The angle between a and b is 0, while that between a and c is slightly higher than 0. However, we argue that c should be more similar to a than b. This isn't the case, however, with Cosine similarity.
+	c. Finally, if the angle between a and b is equal to that between a and c, but b has more similar elements than c, b should be more similar. Once again, the Cosine similarity function doesn't capture that.
+		Ex: a = (1,2,3), b = (1,2), c = (1,2,3). The angle between a and b and that between a and c are both equal to 0 in their respective dimension. However, we argue that c is more similar because of the extra value in the 3 element.
+
+Based on these observations, we tried to make our own similarity function. What we came up is this:
+	+ Given a potential user rating vector V1 and our target user rating vector V2 (the vector for user U):
+		1. Find the length of the projection of V1 on V2 -> P1 = V1 * V2 / ||V2||
+		2. Find the length of the projection of V3--the difference of V1 and V2--on V2 -> P2 = V3 * V2 / ||V2||
+		3. Calculate the difference -> D = P1 - P2
+		4. Multiply the result by the Cosine similarity -> simVal = D * cosineSim(V1, V2)
+
+Our reasoning is that the difference between the projection lengths can help us solve the problems stated in the observations above. However, we eventually found out that said approach only helped with problem c and not problem a or b. 
+	+ It turns out that increasing the size of V1 by a certain factor results in V3 decreasing by the same factor and vice versa. Therefore, difference between the projection lengths stays the same and problem a wasn't solve.
+	+ Since problem a wasn't solve, the similarity between (1,2) and (2,4) is the same as that between (1,2) and (1,2). Therefore, problem b wasn't solved as well.
+	+ However, because we took vector lengths into consideration, the more elements V1 and V2 shares, the larger the projection length value. Therefore, problem c was solved.
+
+Even though we only solved 1 out of 3 problems that we observed with the Cosine similarity, said solution increased our prediction accuracy by a few percents. Moreover, because we have the cosine value multiple, we also got the benefits of Cosine similarity in our function. Therefore, we decided was enough to choose our inhouse function as the main similarity function for this project.
+
+IV. Results
+
+To measure accuracy, we took the rating probability matrix from kNN and find the rating with the highest probability for each entry. We then compare those ratings to the ones from our validation sets and calculated the percentage of ratings we got right. Following is the result for each similarity function discussed above (except for Jaccard similarity and Dot Product similarity). 
+
+The testing scenario is the InstEval dataset, with 51394 entries in the input data set, 14684 entries in the validation set, and 7343 entries in the test set. 
+
+For k equals 5:
+
+		Validation		Test
+Cosine:		0.3396895	|	0.3309274
+Manhattan:	0.3356034	|	0.3343320
+Euclidean:	0.3378507	|	0.3348768	
+Chebychev:	0.3377826	|	0.3408689
+Correlation:	0.3452057	|	0.3479504
+RBFK:		0.3378507	|	0.3348768
+Inhouse:	0.3554209	|	0.3587090
+
+For k equals 10:
+
+		Validation		Test
+Cosine:		0.3332198	|	0.3250715
+Manhattan:	0.3329474	|	0.3249353
+Euclidean:	0.3325388	|	0.3297018
+Chebychev:	0.3344457	|	0.3333787
+Correlation:	0.3390765	|	0.3369195
+RBFK:		0.3325388	|	0.3297018
+Inhouse:	0.3495642	|	0.3384175
+
+We can see that our similarity function produced better results, even if only slightly, than other similarity functions. This justifies our decision to use our inhouse function as the main similarity function for this project. 
+
+Running our kNN program on the SongList dataset, with 1600000 entries in the input data set, 200000 entries in the validation set, and 200000 entries in the test set, we get the following results:
+
+For k equals 5:
+	+ Validation:
+	+ Test:
+
+For k equals 10:
+	+ Validation: 0.42199
+	+ Test: 0.41969
+
+V. Distributions & Graphs
+
+

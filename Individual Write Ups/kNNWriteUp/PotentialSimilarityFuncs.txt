@@ -1,0 +1,18 @@
+Potential similarity functions:
+1. l-p norm (Manhattan, Euclidean, Chebychev): 
+	https://dataaspirant.com/2015/04/11/five-most-popular-similarity-measures-implementation-in-python/
+2. Jaccard similarity: 
+	https://dataaspirant.com/2015/04/11/five-most-popular-similarity-measures-implementation-in-python/
+	https://en.wikipedia.org/wiki/Jaccard_index#Tanimoto_Similarity_and_Distance
+3. Radial basis function kernel:
+	https://en.wikipedia.org/wiki/Radial_basis_function_kernel
+4. Cosine similarity:
+	https://en.wikipedia.org/wiki/Cosine_similarity
+5. Dot product:
+	https://developers.google.com/machine-learning/clustering/similarity/measuring-similarity
+6. Correlation:
+	http://www.analytictech.com/mb876/handouts/distance_and_correlation.htm
+7. Some simple combinations of difference, absolute, sum, etc.
+	https://stackoverflow.com/questions/46456101/how-to-measure-the-similarity-between-two-vectors
+8. A bunch of complex ones:
+	https://medium.com/@adriensieg/text-similarities-da019229c894
