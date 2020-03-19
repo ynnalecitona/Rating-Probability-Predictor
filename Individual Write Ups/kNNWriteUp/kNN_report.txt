@@ -13,16 +13,16 @@ For SongList's training set, the above method took too long since we're sampling
 		+ We then proceeded with the remaining item ids as stated above.
 
 II. Datasets chosen
-For our project, we chose the InstEval data set (73421 entries) and the Song List data set (2000000 entries).
+For our project, we chose the InstEval data set (73421 entries) and the SongList data set (2000000 entries).
 
 We chose InstEval because our group is familiar with this data set, and the number of entries are small enough for our prediction models to finish execution in a short amount of time.
 
-We chose Song List because the data set is larger, therefore allow us to understand how our program will perform under larger data sets. Also, we like songs.
+We chose SongList because the data set is larger, therefore allow us to understand how our program will perform under larger data sets. Also, we like songs.
 
 III. Division proportions
 For InstEval, we divided the training set, validation set, and test set into a (70%, 20%, 10%) ratio.
 
-For Song List, because more data is available, we divided the training set, validation set, and test set into a (80%, 10%, 10%) ratio.
+For SongList, because more data is available, we divided the training set, validation set, and test set into a (80%, 10%, 10%) ratio.
 
 -----Section 2: K-Nearest-Neighbors (kNN)-----
 
@@ -48,17 +48,17 @@ Since the kNN method requires access to specific user rating vectors in its calc
 
 Initially, this format worked quite well, as we were able to perform prediction on the InstEval dataset, using 51394 known ratings (train set) to predict 14684 new user and item entries (validation set), in roughly 1 minute. 
 
-However, the problem arose when we tried to run our kNN program on Song List, a medium size dataset with 2 million entries. With 200 thousand unique users and more than 127 thousand unique items, the resulting rating matrix was too large to be represented in R.
+However, the problem arose when we tried to run our kNN program on SongList, a medium size dataset with 2 million entries. With 200 thousand unique users and more than 127 thousand unique items, the resulting rating matrix was too large to be represented in R.
 
-Following the recommendation in the textbook, we first tried to represent the Song List dataset using the rectools package's formUserData() function. However, the convertion took too long so we gave up on this idea.
+Following the recommendation in the textbook, we first tried to represent the SongList dataset using the rectools package's formUserData() function. However, the convertion took too long so we gave up on this idea.
 
-Then, we tried switching to using a simple data.frame structure to represent the input dataset. Now, whenever kNN requires a specific user rating vector, we would search through the input dataset, find all ratings belong to the specified user, and construct said vector. This meant that for a user U and k neighbors, we would perform the searching k+1 times. With this method, we could finally handle Song List. 
+Then, we tried switching to using a simple data.frame structure to represent the input dataset. Now, whenever kNN requires a specific user rating vector, we would search through the input dataset, find all ratings belong to the specified user, and construct said vector. This meant that for a user U and k neighbors, we would perform the searching k+1 times. With this method, we could finally handle SongList. 
 
 However, said dataset searching and rating vector construction lead to a severe decrease in performance. Using the same InstEval prediction case as above, this new data format finished prediction in roughly 6 minutes. Even worse, when we tried running our kNN program on Song List, using 1.6 million known ratings (train set) to predict 200 thousand new user and item entries (validation set), the program didn't finished even after nearly 30 hours.
 
 Knowing that the main problem lied in the searching, we decided to combine our two formats together. The overal input data set would still be a data.frame object, but for every prediction of a certain user U and an item I, we would first extract the ratings of all users who have rated item I--as well as that of user U--from the input data set (using indexing). Then, we would construct a matrix from the extracted data set. Finally, we would perform kNN using said matrix. 
 
-With this hybrid format, we successfully performed kNN on Song List in roughly 3 hours, a significant decrease from 30 hours (unfinished).
+With this hybrid format, we successfully performed kNN on SongList in roughly 3 hours, a significant decrease from 30 hours (unfinished).
 
 Moreover, we discovered that with this format, for any one prediction instance, the matrix that we had to use was much smaller than the one created by converting the entire input data set.
 This effect stemmed from two reasons:
@@ -166,5 +166,25 @@ For k equals 10:
 	+ Test: 0.41969
 
 V. Distributions & Graphs
+1. For InstEval
+For both the k = 5 and k = 10 cases, we saw no noticable difference between the validation data bar plot and the test data bar plot. This signified that our validation data set and test data set were both properly sampled, resulting in a similar distribution of the ratings. We also saw no clear differences when comparing k = 5's bar plots to k = 15's bar plot, which may suggest that for InstEval, having k = 5 was good enough in representing the rating distribution. 
+
+Moreover, we can also see that those bar plots closely matched the bar plot for the actual ratings, which indicated that our kNN accurately matched the rating probability distribution of InstEval.
+
+As for scatter plots, k = 5's scatter plots differed greatly to k = 15's ones. In the k = 5 case, the probabilities that a rating could have were roughly equally distributed; in the k = 15 case, the probabilities aggregated around the < 0.75 range. 
+
+Nevertheless, such differences can be attributed to the value of k itself. Each rating's probability was calculated as the proportion of neighbours out of k nearest neighbours that had said rating. Therefore, for k = 5, the possible values for probability were {0.0,0.2,0.4,0.6,0.8,1.0}. The values 0.25 and 0.5 that were also in the plots indicated that some users that we had to predict only had 4 neighbours, since the possible probabilities for k = 4 were {0.0, 0.25, 0.5, 0.75, 1.0}. Here, we also note that while k = 4 has 5 possible probabilities, k = 5 has 6. Setting k to have a higher value thus allowing more possible probabilities, which explained why the scatter plots for k = 15 were more dense. 
+
+However, it was interesting to see that nearly all probabilities were less than 0.75, which indicated that kNN was rarely ever more than 75% sure about a rating prediction (except for the rare case in rating 4 of the validation data).
+
+2. For SongList:
+Just like in InstEval, we see that the bar plots for the validation data and test data closely resembled each other, indicating that our data sets were properly sampled. Moreover, the bar plots were also similar to that of the actual rating, indicating that our kNN accurately matched the rating probability distribution of SongList as well.
+
+As for the scatter plots, the probabilities are slightly more distributed than the ones in InstEval's k = 15 case, and every rating had a 1.0 for some predictions. This could either be because the validation set and test set were larger, thereby increasing the chance of encountering a very obvious prediction case. Or it could be that since the training set was much larger, kNN had more data for its predictions and were generally more confident. 
+
+We believe the latter reasoning to be the case, as the validation and test accuracies for SongList were around 42%, while said accuracies for InstEval were only around the 32-35% range.
+
+
+
 
 
