@@ -1,12 +1,33 @@
 require(data.table)
 
-cosineSim <- function(trainData)
-
-# trainData should be in a data.table form
 # specialArgs contains k (i.e. number of nearest neighbours)
-KNN <- function(trainData, maxRating, embedMeans, specialArgs)
+KNN_setup <- function(dataIn, maxRating, specialArgs)
 {
-        #embedMeans()
+        trainData <- dataIn
+        if ((.Machine$integer.max / length(unique(dataIn[,1]))) > length(unique(dataIn[,2]))) {
+                dataSetSize <- "small"
+        } else {
+                dataSetSize <- "big"
+        }
+        maxRating <- maxRating
+        KNNData <- list(trainData = dataIn, mode = dataSetSize,
+                        k = specialArgs, maxRating = maxRating)
+        class(KNNData) <- "recProbs"
+        return(KNNData)
+}
+
+KNN_predict <- function(probsFitOut, newXs)
+{
+        if (probsFitOut$mode == "small")
+                find_kNN_small(probsFitOut$trainData,
+                               probsFitOut$k,
+                               probsFitOut$maxRating,
+                               newXs)
+        else
+                find_kNN_big(probsFitOut$trainData,
+                             probsFitOut$k,
+                             probsFitOut$maxRating,
+                             newXs)
 }
 
 #-----------------------------kNN parameters checking-----------------------------
