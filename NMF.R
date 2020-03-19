@@ -70,7 +70,7 @@ NMFTrain <- function(dataIn,maxRating,specialArgs) {
 			tuned <- reco$tune(training, opts = opts)
 			end_time <- Sys.time()
 
-			fn <- as.character(i) + "tuning.data"
+			fn <- paste(as.character(i),"tuning.data")
 			saveRDS(tuned, file=fn)
 
 			print('Finished tuning the Reco Model')
