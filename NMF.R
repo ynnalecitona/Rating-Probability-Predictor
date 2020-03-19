@@ -66,7 +66,8 @@ NMFTrain <- function(dataIn,maxRating,specialArgs) {
 			print("Rating:")
 			print(i)
 			start_time <- Sys.time()
-			tuned <- reco$tune(training, opts = list(dim = c(25,50,100,200), nmf = TRUE, nthread = nthread, progress = TRUE, verbose = TRUE))
+			opts = list(dim = c(25,50,100,200), nmf = TRUE, costp_l1 = 0, costp_l2 = 0, costq_l1 = 0, costq_l2 = 0, lrate = 0.1, nmf = TRUE, nthread = nthread, progress = TRUE, verbose = TRUE)
+			tuned <- reco$tune(training, opts = opts)
 			end_time <- Sys.time()
 
 			print('Finished tuning the Reco Model')
