@@ -165,6 +165,8 @@ find_rated_users <- function(dataIn, targetItemIdx)
 
 # Calculate each rated user's similarity to the target user.
 # Here is where to choose which similarity function to use.
+# NOTE: Make sure to change the similarity function used in both the if and the else
+#       statements if you're planning of using only one similarity function
 calc_sims <- function(ratedUsers, targetUser, numRatedUsers)
 {
         if (numRatedUsers == 1) {
