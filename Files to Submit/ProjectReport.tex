@@ -82,6 +82,29 @@ After using this partition to determine the probabilities of each possible ratin
 
 
 \section{NMF - Nonnegative Matrix Factorization}
+\newpage
+\section{NMF}
+
+\subsection{Introduction to Non-negative Matrix Factorization}
+NMF is the process of decomposing a sparse matrix into two matrices that approximate the values already present in the matrix. This allows us then to approximate values in the matrix that we do not have data on. Therefore, NMF is a strong choice of model in recommender systems when all users and items are already known.
+\subsection{Implementation}
+The most important choice to make when using NMF is the choice of rank. This rank determines the granularity at which our synthetic users and items are generated. This means that making the right choice of rank is crucial. To do this when a user inputs their data into probRatingsFit() with the method 'NMF' they have the choice of choosing their own rank in the specialArgs. However, we also give the user the option of not inputing a rank and having that determined for them. In the case that they do not input a rank we use RecoSystem's tune() function to run crossvalidation across the ranks [25, 50, 100, 200] we felt that this would give the user a good overview of what range of ranks will work best for them. Unfortunately though you can also tune parameters like learning rate and regularization functions the number of possible combinations of rank and other hyper parameters makes optimization take days to run.
+\subsection{Testing}
+Running NMF began with the data from MovieLens. This data ran extremely quickly and well with the crossvalidation function that we made ourselves. Below you can see the lowest loss values for MovieLens and SongList.
+
+\begin{figure}
+  \includegraphics[width=\linewidth]{..\Graphs\FinalNMFMovie.png}
+  \caption{MovieLens Rank x Loss}
+\end{figure}
+
+\begin{figure}
+  \includegraphics[width=\linewidth]{..\Graphs\FinalNMFSong.png}
+  \caption{SongList Rank x Loss}
+\end{figure}
+
+
+As you can see the loss value continued to drop. Unfortunately, it was not able to run long enough to get higher rank value. Though we can see that change in loss begins to get very small and that likely we were close to the optimal rank.
+
 
 \section{KNN - k Nearest Neighbors}
 
