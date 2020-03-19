@@ -158,8 +158,8 @@ We can see that our similarity function produced better results, even if only sl
 Running our kNN program on the SongList dataset, with 1600000 entries in the input data set, 200000 entries in the validation set, and 200000 entries in the test set, we get the following results:
 
 For k equals 5:
-	+ Validation:
-	+ Test:
+	+ Validation: 0.41884
+	+ Test: 0.414995
 
 For k equals 10:
 	+ Validation: 0.42199
