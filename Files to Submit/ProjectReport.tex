@@ -121,6 +121,8 @@ Unfortunately though you can also tune parameters like learning rate and regular
 
 \subsection{Testing}
 
+Running NMF began with the data from MovieLens. This data ran extremely quickly and well with the crossvalidation function that we made ourselves. Below you can see the lowest loss values for MovieLens and SongList.
+
 \begin{figure}[ht]
 \centering
 \includegraphics[scale=0.3]{FinalNMFMovie.png}
@@ -128,7 +130,12 @@ Unfortunately though you can also tune parameters like learning rate and regular
 \label{fig:universe}
 \end{figure}
 
-Running NMF began with the data from MovieLens. This data ran extremely quickly and well with the crossvalidation function that we made ourselves. Below you can see the lowest loss values for MovieLens and SongList.
+\begin{figure}[ht]
+\centering
+\includegraphics[scale=0.3]{FinalNMFSong.png}
+\caption{SongList Rank x Loss}
+\label{fig:universe}
+\end{figure}
 
 As you can see the loss value continued to drop. Unfortunately, it was not able to run long enough to get higher rank value. Though we can see that change in loss begins to get very small and that likely we were close to the optimal rank.
 
@@ -1259,18 +1266,6 @@ $\newline$
 
 $\newline$
 \raggedright\url{http://www.analytictech.com/mb876/handouts/distance_and_correlation.htm}
-
-$\newline$
-7. Some simple combinations of difference, absolute, sum, etc.
-
-$\newline$
-\raggedright\url{https://stackoverflow.com/questions/46456101/how-to-measure-the-similarity-between-two-vectors}
-
-$\newline$
-8. A bunch of complex ones:
-
-$\newline$
-\raggedright\url{https://medium.com/@adriensieg/text-similarities-da019229c894}
 
 \end{document}
 
