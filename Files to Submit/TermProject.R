@@ -95,88 +95,81 @@ LogitPredict <- function(probsFitOut, newXs) {
 ############################ NMF SECTION ############################
 
 NMFTrain <- function(dataIn,maxRating,specialArgs) {
-  total_time <- Sys.time()
-  # The list object to be outputted containing 3 values the prediction method and the list of trained models
-  outProbFit <- vector('list', 3)
-  names(outProbFit) <- c('predMethod', 'models', 'z')
-  outProbFit$predMethod <- 'NMF'
-  outProbFit$models <- vector('list', maxRating)
-  givenRank <- FALSE
+	total_time <- Sys.time()
+	# The list object to be outputted containing 3 values the prediction method and the list of trained models
+	outProbFit <- vector('list', 3)
+	names(outProbFit) <- c('predMethod', 'models', 'z')
+	outProbFit$predMethod <- 'NMF'
+	outProbFit$models <- vector('list', maxRating)
+	givenRank <- FALSE
 
-  # If the user does provide a rank then use that rank instead of tuning for a rank.
-  if( 'rank' %in% names(specialArgs) ) {
-    givenRank <- TRUE
-  }
+	# If the user does provide a rank then use that rank instead of tuning for a rank.
+	if( 'rank' %in% names(specialArgs) ) {
+		givenRank <- TRUE
+	}
 
-  # If the user wishes to increase the number of threads used to tune then they can be modified here.
-  # The default is 1.
-  nthread <- 1
-  if ( 'nthread' %in% names(specialArgs) ) {
-    nthread <- specialArgs$nthread
-  }
+	# If the user wishes to increase the number of threads used to tune then they can be modified here.
+	# The default is 1.
+	nthread <- 1
+	if ( 'nthread' %in% names(specialArgs) ) {
+		nthread <- specialArgs$nthread
+	}
 
-  index1 <- specialArgs$index1
+	index1 <- specialArgs$index1
 
-  # Over all the output columns
-  for( i in 1:maxRating ) {
-    # Factor in the user and item columns to get the current rating column
-    nRatingCol <- i + 2
+	# Over all the output columns
+	for( i in 1:maxRating ) {
+		# Factor in the user and item columns to get the current rating column
+		nRatingCol <- i + 2
+		
+		reco <- Reco()
 
-    reco <- Reco()
+		# Init the training data for the current rating column
+		training <- data_memory(dataIn[,1], dataIn[,2], dataIn[,nRatingCol], index1 = index1)
+		if( givenRank ){
+			reco$train(training, out_model = tempfile(), opt = list(dim = rank, nmf=TRUE, nthread = nthread))
+		}
+		else {
+			print(paste("Begining to tune the Reco Model for Rating:", i))
+			opts = list(dim = c(25,50,100,200,500,1000,2000), nmf = TRUE, costp_l1 = 0, costp_l2 = 0, costq_l1 = 0, costq_l2 = 0, lrate = 0.1, nmf = TRUE, nthread = nthread, progress = TRUE, verbose = TRUE)
+			tuned <- reco$tune(training, opts = opts)
 
-    # Init the training data for the current rating column
-    training <- data_memory(dataIn[,1], dataIn[,2], dataIn[,nRatingCol], index1 = index1)
-    if( givenRank ){
-      reco$train(training, out_model = tempfile(), opt = list(dim = rank, nmf=TRUE, nthread = nthread))
-    }
-    else {
-      print("Begining to tune the Reco Model")
-      print("Rating:")
-      print(i)
-      start_time <- Sys.time()
-      tuned <- reco$tune(training, opts = list(dim = c(25,50,100,200), nmf = TRUE, nthread = nthread, progress = TRUE, verbose = TRUE))
-      end_time <- Sys.time()
+			fn <- paste(as.character(i),"SongYEs.data")
+			saveRDS(tuned, file=fn)
 
-      print('Finished tuning the Reco Model')
-      print("Rating:")
-      print(i)
-      print("Current tume time:")
-      print(end_time - start_time)
-      print("Total time:")
-      print(end_time - total_time)
+			print(paste("Finished tuning the Reco Model for Rating:", i))
+			reco$train(training, opts = tuned$min)
+		}
+			  	
+		result <- reco$output(out_P = out_memory(), out_Q =  out_memory())
+		outProbFit$models[[i]] <- result
+	}
 
-      reco$train(training, opts = tuned$min)
-    }
-
-    result <- reco$output(out_P = out_memory(), out_Q =  out_memory())
-    outProbFit$models[[i]] <- result
-  }
-
-  return(outProbFit)
+	return(outProbFit)
 }
 
 NMFPredict <- function(probsFitOut,newData) {
-  nNewData <- nrow(newData)
+	nNewData <- nrow(newData)
+	
+	models <- probsFitOut$models
+	nModels <- length(models)
 
-  models <- probsFitOut$models
-  nModels <- length(models)
-
-  # Predictions with a column for each possible rating and a row for each new data input.
-  preds <- matrix(nrow = nNewData, ncol = nModels)
-  # For each new datum that we are given
-  for(i in 1:nNewData) {
-    # TODO remove print statement
-    print(i)
-    # For each model of a different rating
-    for(j in 1:nModels) {
-      newDatum <- newData[i,]
-      # The prediction is equal to the dot product of the usersID row in P and the itemID col in Q
-      preds[i,j] <- models[[j]]$P[newDatum[[1]],] %*% models[[j]]$Q[newDatum[[2]],]
-    }
-    preds[i,] <- softmax(preds[i,])
-  }
-  # rows returned are the predictions of each rating for a new datum
-  return(preds)
+	# Predictions with a column for each possible rating and a row for each new data input.
+	preds <- matrix(nrow = nNewData, ncol = nModels)
+	# For each new datum that we are given
+	for(i in 1:nNewData) {
+		# TODO remove print statement
+		print(i)
+		# For each model of a different rating
+		for(j in 1:nModels) {
+			newDatum <- newData[i,]
+			# The prediction is equal to the dot product of the usersID row in P and the itemID col in Q 
+			preds[i,j] <- models[[j]]$P[newDatum[[1]],] %*% models[[j]]$Q[newDatum[[2]],]
+		}
+		preds[i,] <- softmax(preds[i,])
+	}
+	# rows returned are the predictions of each rating for a new datum
+	return(preds)
 }
 
 ############################ KNN SECTION ############################
