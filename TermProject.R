@@ -75,21 +75,14 @@ NMFTrain <- function(dataIn,maxRating,specialArgs) {
       reco$train(training, out_model = tempfile(), opt = list(dim = rank, nmf=TRUE, nthread = nthread))
     }
     else {
-      print("Begining to tune the Reco Model")
-      print("Rating:")
-      print(i)
-      start_time <- Sys.time()
-      tuned <- reco$tune(training, opts = list(dim = c(25,50,100,200), nmf = TRUE, nthread = nthread, progress = TRUE, verbose = TRUE))
-      end_time <- Sys.time()
+      print(paste("Begining to tune the Reco Model for Rating:", i))
+      opts = list(dim = c(25,50,100,200,500,1000,2000), nmf = TRUE, costp_l1 = 0, costp_l2 = 0, costq_l1 = 0, costq_l2 = 0, lrate = 0.1, nmf = TRUE, nthread = nthread, progress = TRUE, verbose = TRUE)
+      tuned <- reco$tune(training, opts = opts)
 
-      print('Finished tuning the Reco Model')
-      print("Rating:")
-      print(i)
-      print("Current tume time:")
-        print(end_time - start_time)
-        print("Total time:")
-        print(end_time - total_time)
+      fn <- paste(as.character(i),"SongYEs.data")
+      saveRDS(tuned, file=fn)
 
+      print(paste("Finished tuning the Reco Model for Rating:", i))
       reco$train(training, opts = tuned$min)
     }
           
@@ -123,7 +116,6 @@ NMFPredict <- function(probsFitOut,newData) {
   # rows returned are the predictions of each rating for a new datum
   return(preds)
 }
-
 KNN <- function(dataIn,maxRating,embedMeans,specialArgs) {
   # embedMeans: look at entire database, find all the users who've rated this item
   # get costDistance
