@@ -25,11 +25,44 @@ sampling_data <- function(dataIn, sampleSize, verbose = FALSE)
                 samplingIdx <- sample(1:nrow(dataIn), sampleSize)
                 sampleData <- dataIn[samplingIdx,]
                 i <- i + 1
+                if (i %% 1000 == 0)
+                        print("10k")
         }
         if (verbose) {
                 print("Trials needed: ")
                 print(i)
         }
+        return(sampleData)
+}
+
+# This function is used to sample SongList's training set
+sampling_data3 <- function(dataIn, sampleSize, verbose = FALSE)
+{
+        # Utilize the fact that Song List has 10 samples per user,
+        # and the data set is ordered by user ids.
+        localIdx <- sample(1:10, 200000, replace = TRUE)
+        increment <- c(0:199999) * 10
+        samplingIdx <- increment + localIdx
+        sampleData <- dataIn[samplingIdx,]
+        print("User sample done")
+
+        dataIn2 <- dataIn[-samplingIdx,]
+        uniqueItemsTotal <- unique(dataIn[,2])
+        uniqueItemsRemaining <- uniqueItemsTotal[!(uniqueItemsTotal %in% sampleData[,2])]
+        sampleItemsIdx <- vector(mode = "integer", length = length(uniqueItemsRemaining))
+        for (j in 1:length(uniqueItemsRemaining)) {
+                if (j %% 1000 == 0)
+                        print("Item i")
+                itemiIdxs <- which(dataIn2[,2] == uniqueItemsRemaining[j])
+                sampleItemsIdx[j] <- itemiIdxs[sample(1:length(itemiIdxs),1)]
+        }
+        sampleData <- rbind(sampleData, dataIn2[sampleItemsIdx,])
+        print("Item sample done")
+
+        dataIn3 <- dataIn2[-sampleItemsIdx,]
+        remSampleSize <- sampleSize - nrow(sampleData)
+        samplingIdx <- sample(1:nrow(dataIn3), remSampleSize)
+        sampleData <- rbind(sampleData, dataIn3[samplingIdx,])
         return(sampleData)
 }
 
@@ -71,14 +104,14 @@ create_experiment_sets <- function(dataIn, ratio)
         return(experiment_sets)
 }
 
-save_experiment_sets <- function(expSets)
+save_experiment_sets <- function(expSets, setNames)
 {
         trainSet <- expSets$trainSet
         validationSet <- expSets$validationSet
         testSet <- expSets$testSet
-        write.csv(trainSet, "train.data", row.names = FALSE)
-        write.csv(validationSet, "validation.data", row.names = FALSE)
-        write.csv(testSet, "test.data", row.names = FALSE)
+        write.csv(trainSet, setNames[1], row.names = FALSE)
+        write.csv(validationSet, setNames[2], row.names = FALSE)
+        write.csv(testSet, setNames[3], row.names = FALSE)
 }
 
 #-----------------------How to create the experiment sets-----------------------
