@@ -203,7 +203,8 @@ save_mat <- function(ratingPredMat, i, fileName)
 
 # This version of kNN is for cases where dataIn can be entirely converted into a matrix.
 #       i.e. (# unique users * # unique items) < .Machine$integer.max
-find_kNN_small <- function(dataIn, k, maxRating, newXs, fileName)
+find_kNN_small <- function(dataIn, k, maxRating, newXs,
+                           fileName = NULL, verbose = FALSE, progressSaving = FALSE)
 {
         if(is_valid_values(k, maxRating) == FALSE)
                 return(-1)
@@ -211,7 +212,8 @@ find_kNN_small <- function(dataIn, k, maxRating, newXs, fileName)
         dataMat <- dataToMatrix(dataIn)
         ratingPredMat <- matrix(nrow = nrow(newXs), ncol = maxRating)
         for (i in 1:nrow(newXs)) {
-                print(i)
+                if (verbose)
+                        print(i)
                 targetUserIdx <- which(rownames(dataMat) == newXs[i,1])
                 targetItemIdx <- which(colnames(dataMat) == newXs[i,2])
 
@@ -232,20 +234,22 @@ find_kNN_small <- function(dataIn, k, maxRating, newXs, fileName)
                                                                k,
                                                                maxRating)
                 }
-                if (i %% 10000 == 0)
+                if (progressSaving && i %% 10000 == 0)
                         save_mat(ratingPredMat, i, fileName)
         }
         return(ratingPredMat)
 }
 
-find_kNN_big <- function(dataIn, k, maxRating, newXs, fileName)
+find_kNN_big <- function(dataIn, k, maxRating, newXs,
+                         fileName = NULL, verbose = FALSE, progressSaving = FALSE)
 {
         if(is_valid_values(k, maxRating) == FALSE)
                 return(-1)
         # byrow = TRUE allows us to replace a matrix's row with a vector
         ratingPredMat <- matrix(nrow = nrow(newXs), ncol = maxRating, byrow = TRUE)
         for (i in 1:nrow(newXs)) {
-                print(i)
+                if (verbose)
+                        print(i)
                 foundRating <- dataIn[,1] == newXs[i,1] & dataIn[,2] == newXs[i,2]
 
                 # Assume no repeated rating
@@ -278,7 +282,7 @@ find_kNN_big <- function(dataIn, k, maxRating, newXs, fileName)
                                                                k,
                                                                maxRating)
                 }
-                if (i %% 10000 == 0)
+                if (progressSaving && i %% 10000 == 0)
                         save_mat(ratingPredMat, i, fileName)
         }
         return(ratingPredMat)
